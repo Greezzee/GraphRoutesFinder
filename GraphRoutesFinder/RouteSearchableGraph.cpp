@@ -291,3 +291,59 @@ void RouteSearchableGraph::Dijkstra(node_ptr start, WeightType maxWeight, bool f
 	for (auto& node_pair : m_Nodes)
 		node_pair.second->searchingInfo.isVisited = false;
 }
+
+bool RouteSearchableGraph::isNodeOfTypeExists(NodeType type) {
+	auto nodesTypeIt = m_typedNodes.find(type);
+	if (nodesTypeIt == m_typedNodes.end()) 
+		return false;
+	return !nodesTypeIt->second.empty();
+}
+
+bool RouteSearchableGraph::isNodeExists(GraphNodeID node) {
+	return m_Nodes.find(node) != m_Nodes.end();
+}
+bool RouteSearchableGraph::isLinkExists(GraphLinkID link) {
+	return m_Links.find(link) != m_Links.end();
+}
+bool RouteSearchableGraph::isLinkExists(GraphNodeID from, GraphNodeID to) {
+	auto fromIt = m_Nodes.find(from);
+	if (fromIt == m_Nodes.end())
+		return false;
+	for (auto& link : fromIt->second->outputLinks)
+		if (link->to->ID == to)
+			return true;
+	return false;
+}
+
+std::vector<GraphNodeID> RouteSearchableGraph::getExternalNodes() {
+	std::vector<GraphNodeID> out;
+	for (auto& node : m_Nodes)
+		if (node.second->inputLinks.empty() && node.second->outputLinks.empty())
+			out.push_back(node.second->ID);
+	return out;
+}
+
+bool RouteSearchableGraph::isConnected() {
+	clearSearchingInfo();
+
+	std::stack<node_ptr> stackRoute;
+	stackRoute.push(m_Nodes.begin()->second);
+
+	while (!stackRoute.empty()) { // using DFS to check connectivity 
+		node_ptr node = stackRoute.top();
+		stackRoute.pop();
+		node->searchingInfo.isVisited = true;
+
+		for (auto& outputLink : node->outputLinks)
+			if (!outputLink->to->searchingInfo.isVisited)
+				stackRoute.push(outputLink->to);
+		for (auto& inputLink : node->inputLinks)
+			if (!inputLink->from->searchingInfo.isVisited)
+				stackRoute.push(inputLink->from);
+	}
+
+	for (auto& node : m_Nodes) // all nodes should be marked as visited
+		if (!node.second->searchingInfo.isVisited)
+			return false;
+	return true;
+}

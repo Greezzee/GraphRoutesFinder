@@ -4,13 +4,7 @@
 #include <set>
 #include <map>
 
-// Types of nodes
-enum class NodeType 
-{
-	NO_TYPE,
-	STANDART,
-	SOURCE
-};
+#include "NodeType.h"
 
 using GraphNodeID = unsigned;
 using GraphLinkID = unsigned;
@@ -48,12 +42,25 @@ public:
 
 	// creates Node with type, returns its ID
 	GraphNodeID createNode(NodeType type = NodeType::NO_TYPE);
-
 	// creates link between 2 nodes with some weight. Can be directed or undirected
 	GraphLinkID createLink(GraphNodeID from, GraphNodeID to, WeightType weight = WeightType(), bool isDirected = false);
 
+	// remove node from graph. Also removes all links to/from this node
 	void removeNode(GraphNodeID node);
 	void removeLink(GraphLinkID link);
+
+	bool isNodeExists(GraphNodeID node);
+	bool isLinkExists(GraphLinkID link);
+	bool isLinkExists(GraphNodeID from, GraphNodeID to);
+
+	// returns true if at least 1 node of type exists
+	bool isNodeOfTypeExists(NodeType type);
+
+	// returns array of nodes whitch doesn't have links to any other nodes
+	std::vector<GraphNodeID> getExternalNodes();
+
+	// returns true if graph is weakly connected (if all links are undirected it's equal to connected)
+	bool isConnected();
 
 	// returns array of all shortest paths
 	GraphRoutesToNode findShortestRoutes(NodeType startNodesType, GraphNodeID finishNode);
@@ -61,7 +68,6 @@ public:
 	std::vector<GraphRoutesToNode> findShortestRoutes(NodeType startNodesType, const std::vector<GraphNodeID>& finishNode);
 	// array for every finish node of array of all shortest paths
 	std::vector<GraphRoutesToNode> findShortestRoutes(NodeType startNodesType, NodeType finishNodesType);
-
 	// returns array of all shortest paths. Includes only routes with weight less than maxWeight
 	GraphRoutesToNode findShortestRoutes(NodeType startNodesType, GraphNodeID finishNode, WeightType maxWeight);
 	// array for every finish node of array of all shortest paths. Includes only routes with weight less than maxWeight
