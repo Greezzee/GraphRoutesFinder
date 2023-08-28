@@ -108,8 +108,7 @@ std::vector<GraphRoutesToNode> RouteSearchableGraph::findShortestRoutes(NodeType
 
 	auto startNodesTypeIt = m_typedNodes.find(startNodesType);
 	if (startNodesTypeIt != m_typedNodes.end()) {
-		for (auto& startNode : m_typedNodes[startNodesType])
-			Dijkstra(startNode, WeightType(), true);
+		Dijkstra(startNodesType, WeightType(), true);
 	}
 	std::vector<GraphRoutesToNode> output;
 	for (auto& node : finishNode) {
@@ -123,8 +122,7 @@ std::vector<GraphRoutesToNode> RouteSearchableGraph::findShortestRoutes(NodeType
 	auto startNodesTypeIt = m_typedNodes.find(startNodesType);
 	auto finishNodesTypeIt = m_typedNodes.find(finishNodesType);
 	if (startNodesTypeIt != m_typedNodes.end() && finishNodesTypeIt != m_typedNodes.end()) {
-		for (auto& startNode : m_typedNodes[startNodesType])
-			Dijkstra(startNode, WeightType(), true);
+		Dijkstra(startNodesType, WeightType(), true);
 	}
 	std::vector<GraphRoutesToNode> output;
 	for (auto& node : finishNodesTypeIt->second) {
@@ -140,8 +138,7 @@ std::vector<GraphRoutesToNode> RouteSearchableGraph::findShortestRoutes(NodeType
 
 	auto startNodesTypeIt = m_typedNodes.find(startNodesType);
 	if (startNodesTypeIt != m_typedNodes.end()) {
-		for (auto& startNode : m_typedNodes[startNodesType])
-			Dijkstra(startNode, maxWeight, false);
+		Dijkstra(startNodesType, maxWeight, false);
 	}
 	std::vector<GraphRoutesToNode> output;
 	for (auto& node : finishNode) {
@@ -155,8 +152,7 @@ std::vector<GraphRoutesToNode> RouteSearchableGraph::findShortestRoutes(NodeType
 	auto startNodesTypeIt = m_typedNodes.find(startNodesType);
 	auto finishNodesTypeIt = m_typedNodes.find(finishNodesType);
 	if (startNodesTypeIt != m_typedNodes.end() && finishNodesTypeIt != m_typedNodes.end()) {
-		for (auto& startNode : m_typedNodes[startNodesType])
-			Dijkstra(startNode, maxWeight, false);
+		Dijkstra(startNodesType, maxWeight, false);
 	}
 	std::vector<GraphRoutesToNode> output;
 	for (auto& node : finishNodesTypeIt->second) {
@@ -165,20 +161,26 @@ std::vector<GraphRoutesToNode> RouteSearchableGraph::findShortestRoutes(NodeType
 	return output;
 }
 
-void RouteSearchableGraph::forwardDFS(node_ptr start, WeightType maxWeight, bool findOverweightRoutes) {
+std::vector<GraphNodeID> RouteSearchableGraph::getUnreachableNodes(NodeType type) {
+	clearSearchingInfo();
+
+	auto startNodesTypeIt = m_typedNodes.find(type);
+	if (startNodesTypeIt != m_typedNodes.end()) {
+		for (auto& node : startNodesTypeIt->second)
+			forwardDFS(node);
+	}
+	std::vector<GraphNodeID> output;
+	for (auto& node : m_Nodes) {
+		output.push_back(node.second->ID);
+	}
+	return output;
+}
+
+void RouteSearchableGraph::forwardDFS(node_ptr start) {
 
 	std::stack<node_ptr> stackRoute;
 	stackRoute.push(start);
-
 	start->searchingInfo.isVisited = true;
-	start->searchingInfo.shortestRoutes.node = start->ID;
-	start->searchingInfo.shortestRoutes.isRoutesExist = true;
-	start->searchingInfo.shortestRoutes.routeWeight = WeightType();
-	start->searchingInfo.shortestRoutes.routesData = { GraphRoute() };
-	start->searchingInfo.shortestRoutes.routesData.back().start = start->ID;
-	start->searchingInfo.shortestRoutes.routesData.back().finish = start->ID;
-	start->searchingInfo.shortestRoutes.routesData.back().routeWeight = WeightType();
-	start->searchingInfo.shortestRoutes.routesData.back().nodeRoute = { start->ID };
 
 	while (!stackRoute.empty()) {
 		auto curNode = stackRoute.top();
@@ -188,43 +190,17 @@ void RouteSearchableGraph::forwardDFS(node_ptr start, WeightType maxWeight, bool
 			auto nextNode = outputLink->to;
 			if (!outputLink->isDirected && nextNode == curNode) // processing undirected links
 				nextNode = outputLink->from;
-
-			auto& curNodeRoutes = curNode->searchingInfo.shortestRoutes;
-			auto& nextNodeRoutes = nextNode->searchingInfo.shortestRoutes;
-
-			if (nextNodeRoutes.isRoutesExist &&
-				curNodeRoutes.routeWeight + outputLink->weight > nextNodeRoutes.routeWeight)
-				continue;
 			
-			if (!findOverweightRoutes && curNodeRoutes.routeWeight + outputLink->weight > maxWeight)
+			if (nextNode->searchingInfo.isVisited)
 				continue;
 
 			stackRoute.push(nextNode);
-
-			if (!nextNodeRoutes.isRoutesExist || nextNodeRoutes.routeWeight > curNodeRoutes.routeWeight + outputLink->weight) {
-				nextNodeRoutes.routeWeight = curNodeRoutes.routeWeight + outputLink->weight;
-				nextNodeRoutes.routesData.clear();
-			}
-
 			nextNode->searchingInfo.isVisited = true;
-			nextNodeRoutes.isRoutesExist = true;
-			nextNodeRoutes.node = nextNode->ID;
-
-			for (auto& route : curNodeRoutes.routesData) {
-				nextNodeRoutes.routesData.push_back(route);
-				nextNodeRoutes.routesData.back().nodeRoute.push_back(nextNode->ID);
-				nextNodeRoutes.routesData.back().linksRoute.push_back(outputLink->ID);
-				nextNodeRoutes.routesData.back().finish = nextNode->ID;
-				nextNodeRoutes.routesData.back().routeWeight += outputLink->weight;
-			}
 		}
 	}
-
-	for (auto& node_pair : m_Nodes)
-		node_pair.second->searchingInfo.isVisited = false;
 }
 
-void RouteSearchableGraph::Dijkstra(node_ptr start, WeightType maxWeight, bool findOverweightRoutes) {
+void RouteSearchableGraph::Dijkstra(NodeType startNodesType, WeightType maxWeight, bool findOverweightRoutes) {
 	auto cmp = [](node_ptr a, node_ptr b) {
 		if (a->searchingInfo.shortestRoutes.isRoutesExist && b->searchingInfo.shortestRoutes.isRoutesExist)
 			return a->searchingInfo.shortestRoutes.routeWeight < b->searchingInfo.shortestRoutes.routeWeight;
@@ -234,16 +210,20 @@ void RouteSearchableGraph::Dijkstra(node_ptr start, WeightType maxWeight, bool f
 		};
 
 	std::set<node_ptr, decltype(cmp)> nodesToVisit(cmp);
-	nodesToVisit.insert(start);
 
-	start->searchingInfo.shortestRoutes.node = start->ID;
-	start->searchingInfo.shortestRoutes.isRoutesExist = true;
-	start->searchingInfo.shortestRoutes.routeWeight = WeightType();
-	start->searchingInfo.shortestRoutes.routesData = { GraphRoute() };
-	start->searchingInfo.shortestRoutes.routesData.back().start = start->ID;
-	start->searchingInfo.shortestRoutes.routesData.back().finish = start->ID;
-	start->searchingInfo.shortestRoutes.routesData.back().routeWeight = WeightType();
-	start->searchingInfo.shortestRoutes.routesData.back().nodeRoute = { start->ID };
+	for (auto& start : m_typedNodes[startNodesType]) {
+
+		nodesToVisit.insert(start);
+
+		start->searchingInfo.shortestRoutes.node = start->ID;
+		start->searchingInfo.shortestRoutes.isRoutesExist = true;
+		start->searchingInfo.shortestRoutes.routeWeight = WeightType();
+		start->searchingInfo.shortestRoutes.routesData = { GraphRoute() };
+		start->searchingInfo.shortestRoutes.routesData.back().start = start->ID;
+		start->searchingInfo.shortestRoutes.routesData.back().finish = start->ID;
+		start->searchingInfo.shortestRoutes.routesData.back().routeWeight = WeightType();
+		start->searchingInfo.shortestRoutes.routesData.back().nodeRoute = { start->ID };
+	}
 
 	while (!nodesToVisit.empty()) {
 		auto curNode = *(nodesToVisit.begin());

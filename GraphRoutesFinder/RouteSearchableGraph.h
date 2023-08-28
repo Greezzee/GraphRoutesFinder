@@ -74,6 +74,8 @@ public:
 	std::vector<GraphRoutesToNode> findShortestRoutes(NodeType startNodesType, const std::vector<GraphNodeID>& finishNode, WeightType maxWeight);
 	// array for every finish node of array of all shortest paths. Includes only routes with weight less than maxWeight
 	std::vector<GraphRoutesToNode> findShortestRoutes(NodeType startNodesType, NodeType finishNodesType, WeightType maxWeight);
+	// array of nodes that can't be reachable from any node of type
+	std::vector<GraphNodeID> getUnreachableNodes(NodeType startType);
 private:
 	struct GraphNode;
 	struct GraphLink;
@@ -119,9 +121,9 @@ private:
 
 	void clearSearchingInfo();
 
-	// starts in start, find route to every node in nodesToEndIn
-	void forwardDFS(node_ptr start, WeightType maxWeight, bool findOverweightRoutes);
+	// starts in start, mark as visited all reachable nodes throw forward dfs
+	void forwardDFS(node_ptr start);
 
 	// starts in finish, find route from some node from nodesToStartIn to finish
-	void Dijkstra(node_ptr start, WeightType maxWeight, bool findOverweightRoutes);
+	void Dijkstra(NodeType startNodesType, WeightType maxWeight, bool findOverweightRoutes);
 };
