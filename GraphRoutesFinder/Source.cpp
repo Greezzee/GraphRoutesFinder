@@ -1,6 +1,8 @@
 #include <iostream>
-#include "RouteSearchableGraph.h"
-
+//#include "RouteSearchableGraph.h"
+#include "PedestrianSimulatorGraphFD.h"
+#include <iostream>
+/*
 int main() {
 	RouteSearchableGraph graph;
 	auto a1 = graph.createNode(NodeType::STANDART);
@@ -47,6 +49,44 @@ int main() {
 	graph.removeLink(link_a4a5);
 
 	auto data13 = graph.getExternalNodes();
+
+	return 0;
+}
+*/
+
+int main() {
+	PedestrianSimulatorGraphFD graph;
+
+	auto a = graph.createNode(NodeType::STANDART, 10);
+	auto b = graph.createNode(NodeType::STANDART, 10);
+	auto c = graph.createNode(NodeType::STANDART, 3);
+
+	auto exit = graph.createNode(NodeType::SOURCE, 10);
+
+	auto ac = graph.createLink(a, c, 10);
+	auto bc = graph.createLink(b, c, 30);
+	auto c_exit = graph.createLink(c, exit, 10);
+
+	graph.setExitType(NodeType::SOURCE);
+	graph.setNodeExitCapacity(exit, 40);
+
+	graph.setPrioritizedDirection(a, ac);
+	graph.setPrioritizedDirection(b, bc);
+	graph.setPrioritizedDirection(c, c_exit);
+
+	graph.fillWithPeopleEvenly(NodeType::STANDART, 0.99);
+
+	graph.startSimulation();
+	auto destr = graph.getDestribution();
+	while (destr.peopleInside > 0) {
+
+		for (auto i : destr.peoplePerZone)
+			std::cout << i.first << ": " << i.second << ",   ";
+		std::cout << "\n";
+
+		graph.makeSimulationStep(0.05);
+		destr = graph.getDestribution();
+	}
 
 	return 0;
 }

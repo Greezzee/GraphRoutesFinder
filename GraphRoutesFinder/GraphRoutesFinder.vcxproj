@@ -104,6 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -127,12 +128,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="PedestrianSimulatorGraphFD.cpp" />
     <ClCompile Include="RouteSearchableGraph.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Graph.h" />
     <ClInclude Include="NodeType.h" />
+    <ClInclude Include="PedestrianSimulatorGraphFD.h" />
     <ClInclude Include="RouteSearchableGraph.h" />
+    <ClInclude Include="TypedGraph.h" />
+    <ClInclude Include="WeightedGraph.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
