@@ -56,6 +56,8 @@ int main() {
 
 	auto data13 = graph.getExternalNodes();
 
+	auto dataComponents = graph.getWeaklyConnectedComponents();
+	auto dataComponent = graph.getWeaklyConnectedComponentContainsNode(a2);
 	return 0;
 }
 #endif // GRAPHIC_TEST

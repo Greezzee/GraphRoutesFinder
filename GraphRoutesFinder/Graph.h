@@ -82,6 +82,11 @@ public:
 	std::vector<GraphLinkID> getLinks(GraphNodeID node) const;
 	bool isLinkDirected(GraphLinkID link) const;
 	
+	std::vector<GraphNodeID> getWeaklyConnectedComponentContainsNode(GraphNodeID node);
+	std::vector<std::vector<GraphNodeID>> getWeaklyConnectedComponents();
+
+	//std::vector<GraphNodeID> getStronglyConnectedComponentContainsNode(GraphNodeID node);
+	//std::vector<std::vector<GraphNodeID>> getStronglyConnectedComponent();
 protected:
 	using node_ptr = std::shared_ptr<typename Node_t>;
 	using link_ptr = std::shared_ptr<typename Link_t>;
@@ -254,6 +259,8 @@ bool Graph<Node_t, Link_t>::isConnected() {
 	while (!stackRoute.empty()) { // using DFS to check connectivity 
 		node_ptr node = stackRoute.top();
 		stackRoute.pop();
+		if (node->isVisited)
+			continue;
 		node->isVisited = true;
 
 		for (auto& outputLink : node->outputLinks)
@@ -349,4 +356,68 @@ void Graph<Node_t, Link_t>::forwardDFS(node_ptr start) {
 			nextNode->isVisited = true;
 		}
 	}
+}
+
+template <typename Node_t, typename Link_t>
+std::vector<GraphNodeID> Graph<Node_t, Link_t>::getWeaklyConnectedComponentContainsNode(GraphNodeID node) {
+	if (!isNodeExists(node))
+		return {};
+
+	setNodesUnvisited();
+
+	std::stack<node_ptr> stackRoute;
+	stackRoute.push(m_Nodes.at(node));
+
+	std::vector<GraphNodeID> weaklyConnectedComponent;
+
+	while (!stackRoute.empty()) { // using DFS to get all weakly connected nodes 
+		node_ptr cur_node = stackRoute.top();
+		stackRoute.pop();
+		if (cur_node->isVisited)
+			continue;
+		cur_node->isVisited = true;
+		weaklyConnectedComponent.push_back(cur_node->ID);
+
+		for (auto& outputLink : cur_node->outputLinks)
+			if (!outputLink->to->isVisited)
+				stackRoute.push(m_caster.castNode(outputLink->to));
+		for (auto& inputLink : cur_node->inputLinks)
+			if (!inputLink->from->isVisited)
+				stackRoute.push(m_caster.castNode(inputLink->from));
+	}
+	
+	return weaklyConnectedComponent;
+}
+
+template <typename Node_t, typename Link_t>
+std::vector<std::vector<GraphNodeID>> Graph<Node_t, Link_t>::getWeaklyConnectedComponents() {
+
+	setNodesUnvisited();
+
+	std::vector<std::vector<GraphNodeID>> weaklyConnectedComponents;
+	for (auto node : m_Nodes) if (!node.second->isVisited) {
+		std::stack<node_ptr> stackRoute;
+		stackRoute.push(node.second);
+
+		std::vector<GraphNodeID> weaklyConnectedComponent;
+
+		while (!stackRoute.empty()) { // using DFS to get all weakly connected nodes 
+			node_ptr cur_node = stackRoute.top();
+			stackRoute.pop();
+			if (cur_node->isVisited)
+				continue;
+			cur_node->isVisited = true;
+			weaklyConnectedComponent.push_back(cur_node->ID);
+
+			for (auto& outputLink : cur_node->outputLinks)
+				if (!outputLink->to->isVisited)
+					stackRoute.push(m_caster.castNode(outputLink->to));
+			for (auto& inputLink : cur_node->inputLinks)
+				if (!inputLink->from->isVisited)
+					stackRoute.push(m_caster.castNode(inputLink->from));
+		}
+
+		weaklyConnectedComponents.push_back(std::move(weaklyConnectedComponent));
+	}
+	return weaklyConnectedComponents;
 }

@@ -56,7 +56,7 @@ void TypedGraph<NodeType_t, Node_t, Link_t>::removeNode(GraphNodeID node) {
 	auto typedNodesIt = m_typedNodes.find(removingNode->type);
 	if (typedNodesIt != m_typedNodes.end())
 		typedNodesIt->second.erase(removingNode);
-	this->removeNode(node);
+	Graph< Node_t, Link_t>::removeNode(node);
 }
 
 template <typename NodeType_t, typename Node_t, typename Link_t>
