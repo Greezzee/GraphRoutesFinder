@@ -1,8 +1,9 @@
 #include <iostream>
 //#include "RouteSearchableGraph.h"
 #include "PedestrianSimulatorGraphFD.h"
+#include "GraphTestGenerator.h"
 #include <iostream>
-/*
+#ifndef GRAPHIC_TEST
 int main() {
 	RouteSearchableGraph graph;
 	auto a1 = graph.createNode(NodeType::STANDART);
@@ -23,6 +24,11 @@ int main() {
 	graph.createLink(a5, b2, 2);
 	graph.createLink(a5, a2, 1);
 	graph.createLink(a2, b2, 1);
+
+	auto linkData = graph.getConnectingNodes(link_a1a2);
+	auto outputLinks = graph.getOutputLinks(a1);
+	auto inputLinks = graph.getInputLinks(a1);
+	auto links = graph.getLinks(a1);
 
 	auto out = graph.findShortestRoutes(NodeType::SOURCE, NodeType::STANDART);
 
@@ -52,8 +58,9 @@ int main() {
 
 	return 0;
 }
-*/
-
+#endif // GRAPHIC_TEST
+/*
+#ifndef GRAPHIC_TEST
 int main() {
 	PedestrianSimulatorGraphFD graph;
 
@@ -74,7 +81,7 @@ int main() {
 	graph.setPrioritizedDirection(b, bc);
 	graph.setPrioritizedDirection(c, c_exit);
 
-	graph.fillWithPeopleEvenly(NodeType::STANDART, 0.99);
+	graph.fillWithPeopleEvenly(NodeType::STANDART, 0.99f);
 
 	graph.startSimulation();
 	auto destr = graph.getDestribution();
@@ -84,9 +91,33 @@ int main() {
 			std::cout << i.first << ": " << i.second << ",   ";
 		std::cout << "\n";
 
-		graph.makeSimulationStep(0.05);
+		graph.makeSimulationStep(0.05f);
 		destr = graph.getDestribution();
 	}
 
 	return 0;
 }
+#endif // GRAPHIC_TEST
+*/
+#ifdef GRAPHIC_TEST
+#include <SFML/Graphics.hpp>
+
+int main()
+{
+	GraphTestGenerator generator;
+
+	generator.setNodesCount(30);
+	generator.setLinksCount(50);
+	generator.setExitsCount(3);
+	generator.setExitsCapacityDestr(5, 4);
+	generator.setLinksWidthtDestr(5, 4);
+	generator.setNodesAreaDestr(5, 3);
+
+	generator.initGraphics();
+
+	while (generator.isWindowOpen())
+		generator.drawGraph();
+
+	return 0;
+}
+#endif // GRAPHIC_TEST

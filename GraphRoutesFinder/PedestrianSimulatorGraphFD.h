@@ -6,7 +6,7 @@
 
 namespace detail {
 
-	struct GraphNodeFD : public GraphTypedNode {
+	struct GraphNodeFD : public GraphTypedNode<NodeType> {
 		float spaceArea;
 
 		unsigned peopleCapacity, peopleInside = 0;
@@ -36,7 +36,7 @@ struct PeopleDestributionData {
 
 
 class PedestrianSimulatorGraphFD final :
-	public TypedGraph<detail::GraphNodeFD, detail::GraphLinkFD<float>>,
+	public TypedGraph<NodeType, detail::GraphNodeFD, detail::GraphLinkFD<float>>,
 	public WeightedGraph<float, detail::GraphNodeFD, detail::GraphLinkFD<float>>
 {
 public:

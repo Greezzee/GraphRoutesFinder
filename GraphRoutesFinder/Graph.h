@@ -49,7 +49,7 @@ namespace detail {
 	};
 }
 
-template <typename Node_t = detail::GraphNode, typename Link_t = detail::GraphLink>
+template <typename Node_t, typename Link_t>
 class Graph
 {
 public:
@@ -61,19 +61,26 @@ public:
 	// creates link between 2 nodes with some weight. Can be directed or undirected
 	GraphLinkID createLink(GraphNodeID from, GraphNodeID to, bool isDirected = false);
 
-	// remove node from graph. Also removes all links to/from this node
+	// remove node from graph. Also removes all links to/from this node so hanging links are impossible
 	void removeNode(GraphNodeID node);
 	void removeLink(GraphLinkID link);
 	
-	bool isNodeExists(GraphNodeID node);
-	bool isLinkExists(GraphLinkID link);
-	bool isLinkExists(GraphNodeID from, GraphNodeID to);
+	bool isNodeExists(GraphNodeID node) const;
+	bool isLinkExists(GraphLinkID link) const;
+	bool isLinkExists(GraphNodeID from, GraphNodeID to) const;
 
 	// returns array of nodes whitch doesn't have links to any other nodes
-	std::vector<GraphNodeID> getExternalNodes();
+	std::vector<GraphNodeID> getExternalNodes() const;
 
 	// returns true if graph is weakly connected (if all links are undirected it's equal to connected)
 	bool isConnected();
+
+	// return pair of nodes connected with given link. If link is directed, connection from first to second. Else the sequence is arbitrary
+	std::pair<GraphNodeID, GraphNodeID> getConnectingNodes(GraphLinkID link) const;
+	std::vector<GraphLinkID> getInputLinks(GraphNodeID node) const;
+	std::vector<GraphLinkID> getOutputLinks(GraphNodeID node) const;
+	std::vector<GraphLinkID> getLinks(GraphNodeID node) const;
+	bool isLinkDirected(GraphLinkID link) const;
 	
 protected:
 	using node_ptr = std::shared_ptr<typename Node_t>;
@@ -201,17 +208,17 @@ void Graph<Node_t, Link_t>::removeLink(link_ptr link) {
 }
 
 template <typename Node_t, typename Link_t>
-bool Graph<Node_t, Link_t>::isNodeExists(GraphNodeID node) {
+bool Graph<Node_t, Link_t>::isNodeExists(GraphNodeID node) const {
 	return m_Nodes.find(node) != m_Nodes.end();
 }
 
 template <typename Node_t, typename Link_t>
-bool Graph<Node_t, Link_t>::isLinkExists(GraphLinkID link) {
+bool Graph<Node_t, Link_t>::isLinkExists(GraphLinkID link) const {
 	return m_Links.find(link) != m_Links.end();
 }
 
 template <typename Node_t, typename Link_t>
-bool Graph<Node_t, Link_t>::isLinkExists(GraphNodeID from, GraphNodeID to) {
+bool Graph<Node_t, Link_t>::isLinkExists(GraphNodeID from, GraphNodeID to) const {
 	auto fromIt = m_Nodes.find(from);
 	if (fromIt == m_Nodes.end())
 		return false;
@@ -222,7 +229,7 @@ bool Graph<Node_t, Link_t>::isLinkExists(GraphNodeID from, GraphNodeID to) {
 }
 
 template <typename Node_t, typename Link_t>
-std::vector<GraphNodeID> Graph<Node_t, Link_t>::getExternalNodes() {
+std::vector<GraphNodeID> Graph<Node_t, Link_t>::getExternalNodes() const {
 	std::vector<GraphNodeID> out;
 	for (auto& node : m_Nodes)
 		if (node.second->inputLinks.empty() && node.second->outputLinks.empty())
@@ -247,7 +254,7 @@ bool Graph<Node_t, Link_t>::isConnected() {
 	while (!stackRoute.empty()) { // using DFS to check connectivity 
 		node_ptr node = stackRoute.top();
 		stackRoute.pop();
-		node->searchingInfo.isVisited = true;
+		node->isVisited = true;
 
 		for (auto& outputLink : node->outputLinks)
 			if (!outputLink->to->isVisited)
@@ -261,6 +268,63 @@ bool Graph<Node_t, Link_t>::isConnected() {
 		if (!node.second->isVisited)
 			return false;
 	return true;
+}
+
+template <typename Node_t, typename Link_t>
+std::pair<GraphNodeID, GraphNodeID> Graph<Node_t, Link_t>::getConnectingNodes(GraphLinkID link) const {
+	if (!isLinkExists(link))
+		return { UnsetGraphNodeID, UnsetGraphNodeID };
+
+	const link_ptr linkFound = m_Links.at(link);
+	return { linkFound->from->ID, linkFound->to->ID };
+}
+
+template <typename Node_t, typename Link_t>
+std::vector<GraphLinkID> Graph<Node_t, Link_t>::getInputLinks(GraphNodeID node) const {
+	if (!isNodeExists(node))
+		return {};
+	
+	const node_ptr nodeFound = m_Nodes.at(node);
+
+	std::vector<GraphLinkID> out;
+	for (auto& link : nodeFound->inputLinks)
+		out.push_back(link->ID);
+	return out;
+}
+
+template <typename Node_t, typename Link_t>
+std::vector<GraphLinkID> Graph<Node_t, Link_t>::getOutputLinks(GraphNodeID node) const {
+	if (!isNodeExists(node))
+		return {};
+
+	node_ptr nodeFound = m_Nodes.at(node);
+
+	std::vector<GraphLinkID> out;
+	for (auto& link : nodeFound->outputLinks)
+		out.push_back(link->ID);
+	return out;
+}
+
+template <typename Node_t, typename Link_t>
+std::vector<GraphLinkID> Graph<Node_t, Link_t>::getLinks(GraphNodeID node) const {
+	if (!isNodeExists(node))
+		return {};
+
+	const node_ptr nodeFound = m_Nodes.at(node);
+
+	std::vector<GraphLinkID> out;
+	for (auto& link : nodeFound->inputLinks)
+		out.push_back(link->ID);
+	for (auto& link : nodeFound->outputLinks) if (link->isDirected)
+		out.push_back(link->ID);
+	return out;
+}
+
+template <typename Node_t, typename Link_t>
+bool Graph<Node_t, Link_t>::isLinkDirected(GraphLinkID link) const {
+	if (!isLinkExists(link))
+		return false;
+	return m_Links.at(link)->isDirected;
 }
 
 template <typename Node_t, typename Link_t>
