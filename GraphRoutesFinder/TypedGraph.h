@@ -1,7 +1,8 @@
 #pragma once
-
 #include "Graph.h"
 #include "NodeType.h"
+
+namespace graphs {
 
 namespace detail {
 	template <typename NodeType_t>
@@ -84,3 +85,5 @@ bool TypedGraph<NodeType_t, Node_t, Link_t>::isNodeOfTypeExists(NodeType_t type)
 		return false;
 	return !nodesTypeIt->second.empty();
 }
+
+} // namespace graphs

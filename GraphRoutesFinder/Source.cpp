@@ -1,9 +1,9 @@
 #include <iostream>
-//#include "RouteSearchableGraph.h"
-#include "PedestrianSimulatorGraphFD.h"
-#include "GraphTestGenerator.h"
+#include "RouteSearchableGraph.h"
 #include <iostream>
-#ifndef GRAPHIC_TEST
+/*
+using namespace graphs;
+
 int main() {
 	RouteSearchableGraph graph;
 	auto a1 = graph.createNode(NodeType::STANDART);
@@ -60,66 +60,4 @@ int main() {
 	auto dataComponent = graph.getWeaklyConnectedComponentContainsNode(a2);
 	return 0;
 }
-#endif // GRAPHIC_TEST
-/*
-#ifndef GRAPHIC_TEST
-int main() {
-	PedestrianSimulatorGraphFD graph;
-
-	auto a = graph.createNode(NodeType::STANDART, 10);
-	auto b = graph.createNode(NodeType::STANDART, 10);
-	auto c = graph.createNode(NodeType::STANDART, 3);
-
-	auto exit = graph.createNode(NodeType::SOURCE, 10);
-
-	auto ac = graph.createLink(a, c, 10);
-	auto bc = graph.createLink(b, c, 30);
-	auto c_exit = graph.createLink(c, exit, 10);
-
-	graph.setExitType(NodeType::SOURCE);
-	graph.setNodeExitCapacity(exit, 40);
-
-	graph.setPrioritizedDirection(a, ac);
-	graph.setPrioritizedDirection(b, bc);
-	graph.setPrioritizedDirection(c, c_exit);
-
-	graph.fillWithPeopleEvenly(NodeType::STANDART, 0.99f);
-
-	graph.startSimulation();
-	auto destr = graph.getDestribution();
-	while (destr.peopleInside > 0) {
-
-		for (auto i : destr.peoplePerZone)
-			std::cout << i.first << ": " << i.second << ",   ";
-		std::cout << "\n";
-
-		graph.makeSimulationStep(0.05f);
-		destr = graph.getDestribution();
-	}
-
-	return 0;
-}
-#endif // GRAPHIC_TEST
 */
-#ifdef GRAPHIC_TEST
-#include <SFML/Graphics.hpp>
-
-int main()
-{
-	GraphTestGenerator generator;
-
-	generator.setNodesCount(30);
-	generator.setLinksCount(50);
-	generator.setExitsCount(3);
-	generator.setExitsCapacityDestr(5, 4);
-	generator.setLinksWidthtDestr(5, 4);
-	generator.setNodesAreaDestr(5, 3);
-
-	generator.initGraphics();
-
-	while (generator.isWindowOpen())
-		generator.drawGraph();
-
-	return 0;
-}
-#endif // GRAPHIC_TEST

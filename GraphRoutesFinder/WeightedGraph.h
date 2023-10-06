@@ -1,6 +1,8 @@
 #pragma once
 #include "Graph.h"
 
+namespace graphs {
+
 namespace detail {
 
 	template <typename LinkWeight_t>
@@ -28,3 +30,5 @@ GraphLinkID WeightedGraph<LinkWeight_t, Node_t, Link_t>::createLink(GraphNodeID 
 	newLink.second->weight = weight;
 	return newLink.first;
 }
+
+} // namespace graphs

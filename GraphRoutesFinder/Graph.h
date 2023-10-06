@@ -6,6 +6,8 @@
 #include <map>
 #include <stack>
 
+namespace graphs {
+
 using GraphNodeID = unsigned;
 using GraphLinkID = unsigned;
 
@@ -421,3 +423,5 @@ std::vector<std::vector<GraphNodeID>> Graph<Node_t, Link_t>::getWeaklyConnectedC
 	}
 	return weaklyConnectedComponents;
 }
+
+} // namespace graphs

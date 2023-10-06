@@ -8,6 +8,8 @@
 #include "WeightedGraph.h"
 #include "NodeType.h"
 
+namespace graphs {
+
 // Describes one route from start to finish
 template <typename LinkWeight_t = float>
 struct GraphRoute 
@@ -230,3 +232,5 @@ void RouteSearchableGraph<LinkWeight_t, NodeType_t>::Dijkstra(NodeType_t startNo
 	for (auto& node_pair : this->m_Nodes)
 		node_pair.second->searchingInfo.isVisited = false;
 }
+
+} // namespace graphs

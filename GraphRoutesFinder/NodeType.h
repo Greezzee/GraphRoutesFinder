@@ -1,5 +1,5 @@
 #pragma once
-
+namespace graphs {
 // Types of nodes
 enum class NodeType
 {
@@ -7,3 +7,4 @@ enum class NodeType
 	STANDART,
 	SOURCE
 };
+} // namespace graphs
