@@ -48,10 +48,10 @@ GraphNodeID PedestrianSimulatorGraphFD::createNode(NodeType type, double area, u
 	return newNode.first;
 }
 
-GraphLinkID PedestrianSimulatorGraphFD::createLink(GraphNodeID from, GraphNodeID to, double linkWidth) {
+GraphLinkID PedestrianSimulatorGraphFD::createLink(GraphNodeID from, GraphNodeID to, double linkWidth, double linkWeight) {
 	auto newLink = Graph::createNewLink(from, to);
 	newLink.second->passWidth = linkWidth;
-
+	newLink.second->weight = linkWeight;
 	return newLink.first;
 }
 
@@ -197,4 +197,13 @@ PeopleDestributionData PedestrianSimulatorGraphFD::getDestribution() {
 	out.peopleLeft = m_peopleInsideOnStart - out.peopleInside;
 	out.timeSinceStartSeconds = m_timeSinceStartSeconds;
 	return out;
+}
+
+void PedestrianSimulatorGraphFD::setClosestExitAsPrioritizedDirection(NodeType type) {
+
+	auto routes = findShortestRoutes(m_exitNodeType, type);
+
+	for (auto route : routes) {
+		setPrioritizedDirection(route.node, route.routesData[0].linksRoute.back());
+	}
 }

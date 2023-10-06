@@ -22,7 +22,7 @@ int main()
 }
 */
 
-using namespace graphs;
+using graphs::NodeType;
 
 struct GraphZone {
 	int x_idx, y_idx;
@@ -30,12 +30,11 @@ struct GraphZone {
 	float x_pos, y_pos;
 	float x_len, y_len;
 
-	GraphNodeID node_id = UnsetGraphNodeID;
+	graphs::GraphNodeID node_id = graphs::UnsetGraphNodeID;
 };
 
 int main() {
-	PedestrianSimulatorGraphFD graph;
-	RouteSearchableGraph routeGraph;
+	graphs::PedestrianSimulatorGraphFD graph;
 
 	std::vector<GraphZone> zones;
 
@@ -116,14 +115,11 @@ int main() {
 
 	for (int i = 0; i < zones.size(); ++i) {
 		zones[i].node_id = graph.createNode(NodeType::STANDART, zones[i].x_len * zones[i].y_len);
-		routeGraph.createNode(NodeType::STANDART);
 	}
 
 	auto exitA = graph.createNode(NodeType::SOURCE, 9999.);
-	routeGraph.createNode(NodeType::SOURCE);
 	graph.setNodeExitCapacity(exitA, 30.5);
 	auto exitB = graph.createNode(NodeType::SOURCE, 9999.);
-	routeGraph.createNode(NodeType::SOURCE);
 	graph.setNodeExitCapacity(exitB, 20.5);
 
 	graph.setExitType(NodeType::SOURCE);
@@ -134,16 +130,14 @@ int main() {
 			if (zones[i].x_idx == zones[j].x_idx && zones[i].x_idx % 2 == 0 && zones[i].y_idx == zones[j].y_idx + 1) {
 
 				if (!(zones[i].x_idx == 8 && zones[i].y_idx == 5)) {
-					graph.createLink(zones[i].node_id, zones[j].node_id, zones[i].x_len);
-					routeGraph.createLink(zones[i].node_id, zones[j].node_id, (zones[i].y_len + zones[j].y_len) / 2.);
+					graph.createLink(zones[i].node_id, zones[j].node_id, zones[i].x_len, (zones[i].y_len + zones[j].y_len) / 2.f);
 				}
 
 			}
 
 			if (zones[i].y_idx == zones[j].y_idx && zones[i].y_idx % 2 == 0 && zones[i].x_idx == zones[j].x_idx + 1) {
 				if (zones[i].x_idx != 6 && zones[j].x_idx != 6) {
-					graph.createLink(zones[i].node_id, zones[j].node_id, zones[i].y_len);
-					routeGraph.createLink(zones[i].node_id, zones[j].node_id, (zones[i].x_len + zones[j].x_len) / 2.);
+					graph.createLink(zones[i].node_id, zones[j].node_id, zones[i].y_len, (zones[i].x_len + zones[j].x_len) / 2.f);
 				}
 			}
 
@@ -154,8 +148,7 @@ int main() {
 					zones[j].y_idx == 6 && zones[i].y_idx == 5 ||
 					zones[j].y_idx == 8 && zones[i].y_idx == 7) {
 
-					graph.createLink(zones[i].node_id, zones[j].node_id, zones[j].y_len);
-					routeGraph.createLink(zones[i].node_id, zones[j].node_id, (zones[i].x_len + zones[j].x_len) / 2.);
+					graph.createLink(zones[i].node_id, zones[j].node_id, zones[j].y_len, (zones[i].x_len + zones[j].x_len) / 2.f);
 				}
 			}
 
@@ -167,28 +160,20 @@ int main() {
 					zones[j].y_idx == 8 && zones[i].y_idx == 5 ||
 					zones[j].y_idx == 10 && zones[i].y_idx == 7) {
 
-					graph.createLink(zones[i].node_id, zones[j].node_id, zones[j].y_len);
-					routeGraph.createLink(zones[i].node_id, zones[j].node_id, (zones[i].x_len + zones[j].x_len) / 2.);
+					graph.createLink(zones[i].node_id, zones[j].node_id, zones[j].y_len, (zones[i].x_len + zones[j].x_len) / 2.f);
 				}
 			}
 		}
 
 		if (zones[i].x_idx == 4 && zones[i].y_idx == 8) {
-			graph.createLink(zones[i].node_id, exitB, 1.5);
-			routeGraph.createLink(zones[i].node_id, exitB, (zones[i].x_len) / 2.);
+			graph.createLink(zones[i].node_id, exitB, 1.5, (zones[i].x_len) / 2.f);
 		}
 		if (zones[i].x_idx == 10 && zones[i].y_idx == 7) {
-			graph.createLink(zones[i].node_id, exitA, 2);
-			routeGraph.createLink(zones[i].node_id, exitA, (zones[i].x_len) / 2.);
+			graph.createLink(zones[i].node_id, exitA, 2, (zones[i].x_len) / 2.f);
 		}
 	}
 
-	auto routes = routeGraph.findShortestRoutes(NodeType::SOURCE, NodeType::STANDART);
-
-	for (size_t i = 0; i < routes.size(); i++)
-		for (size_t j = 0; j < zones.size(); j++) if (routes[i].node == zones[j].node_id) {
-			graph.setPrioritizedDirection(zones[j].node_id, routes[i].routesData[0].linksRoute.back());
-		}
+	graph.setClosestExitAsPrioritizedDirection(NodeType::STANDART);
 
 	const float pixelPerMeter = 50;
 
@@ -202,7 +187,7 @@ int main() {
 	float m_simulationTime = 0.;
 	float timeSinceUpdate = 0.;
 
-	const float SIMULATION_STEP = 0.2;
+	const float SIMULATION_STEP = 0.2f;
 	graph.startSimulation();
 	auto destr = graph.getDestribution();
 
@@ -232,11 +217,11 @@ int main() {
 						m_simulationTime = 0.;
 					}
 					if (event.key.code == sf::Keyboard::Up && !m_isSimulating) {
-						fillRatio = std::min(fillRatio + 0.02, 1.);
+						fillRatio = std::min(fillRatio + 0.02f, 1.f);
 						graph.fillWithPeopleEvenly(NodeType::STANDART, fillRatio);
 					}
 					if (event.key.code == sf::Keyboard::Down && !m_isSimulating) {
-						fillRatio = std::max(fillRatio - 0.02, 0.);
+						fillRatio = std::max(fillRatio - 0.02f, 0.f);
 						graph.fillWithPeopleEvenly(NodeType::STANDART, fillRatio);
 					}
 					if (event.key.code == sf::Keyboard::Space) {

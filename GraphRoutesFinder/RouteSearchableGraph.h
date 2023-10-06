@@ -11,7 +11,7 @@
 namespace graphs {
 
 // Describes one route from start to finish
-template <typename LinkWeight_t = float>
+template <typename LinkWeight_t>
 struct GraphRoute 
 {
 	GraphNodeID start = UnsetGraphNodeID, finish = UnsetGraphNodeID;
@@ -22,7 +22,7 @@ struct GraphRoute
 };
 
 // Describes all found routes to node
-template <typename LinkWeight_t = float>
+template <typename LinkWeight_t>
 struct GraphRoutesToNode
 {
 	GraphNodeID node = UnsetGraphNodeID;
@@ -41,14 +41,20 @@ namespace detail {
 	};
 }
 
-template <typename LinkWeight_t = float, typename NodeType_t = NodeType>
-class RouteSearchableGraph : 
-	public TypedGraph<NodeType_t, detail::GraphNodeWithRoutesData<NodeType_t, LinkWeight_t>, detail::GraphWeightedLink<LinkWeight_t>>,
-	public WeightedGraph<LinkWeight_t, detail::GraphNodeWithRoutesData<NodeType_t, LinkWeight_t>, detail::GraphWeightedLink<LinkWeight_t>>
+namespace detail {
+
+template <typename Node_t, typename Link_t>
+class RouteSearchableGraphWithCustomStructure : 
+	public TypedGraph<Node_t, Link_t>,
+	public WeightedGraph<Node_t, Link_t>
 {
+
+	using NodeType_t = typename Node_t::node_type_t;
+	using LinkWeight_t = typename Link_t::link_weight_t;
+
 public:
-	RouteSearchableGraph() { clearSearchingInfo(); };
-	virtual ~RouteSearchableGraph() = default;
+	RouteSearchableGraphWithCustomStructure() { clearSearchingInfo(); };
+	virtual ~RouteSearchableGraphWithCustomStructure() = default;
 
 	// returns array of all shortest paths
 	GraphRoutesToNode<LinkWeight_t> findShortestRoutes(NodeType_t startNodesType, GraphNodeID finishNode);
@@ -63,10 +69,12 @@ public:
 	// array for every finish node of array of all shortest paths. Includes only routes with weight less than maxWeight
 	std::vector<GraphRoutesToNode<LinkWeight_t>> findShortestRoutes(NodeType_t startNodesType, NodeType_t finishNodesType, LinkWeight_t maxWeight);
 private:
-	using node_ptr = std::shared_ptr<detail::GraphNodeWithRoutesData<NodeType_t, LinkWeight_t>>;
-	using link_ptr = std::shared_ptr<detail::GraphWeightedLink<LinkWeight_t>>;
+
 	using node_t = detail::GraphNodeWithRoutesData<NodeType_t, LinkWeight_t>;
 	using link_t = detail::GraphWeightedLink<LinkWeight_t>;
+
+	using node_ptr = std::shared_ptr<node_t>;
+	using link_ptr = std::shared_ptr<link_t>;
 
 	void clearSearchingInfo();
 
@@ -74,22 +82,24 @@ private:
 	void Dijkstra(NodeType_t startNodesType, LinkWeight_t maxWeight, bool findOverweightRoutes);
 };
 
-template <typename LinkWeight_t, typename NodeType_t>
-void RouteSearchableGraph<LinkWeight_t, NodeType_t>::clearSearchingInfo() {
+template <typename Node_t, typename Link_t>
+void RouteSearchableGraphWithCustomStructure<Node_t, Link_t>::clearSearchingInfo() {
 	for (auto& node : this->m_Nodes) {
-		node.second->searchingInfo.shortestRoutes = GraphRoutesToNode();
+		node.second->searchingInfo.shortestRoutes = GraphRoutesToNode<LinkWeight_t>();
 		node.second->searchingInfo.shortestRoutes.node = node.second->ID;
 		node.second->searchingInfo.isVisited = false;
 	}
 }
 
-template <typename LinkWeight_t, typename NodeType_t>
-GraphRoutesToNode<LinkWeight_t> RouteSearchableGraph<LinkWeight_t, NodeType_t>::findShortestRoutes(NodeType_t startNodesType, GraphNodeID finishNode) {
+template <typename Node_t, typename Link_t>
+GraphRoutesToNode<typename RouteSearchableGraphWithCustomStructure<Node_t, Link_t>::LinkWeight_t> 
+	RouteSearchableGraphWithCustomStructure<Node_t, Link_t>::findShortestRoutes(NodeType_t startNodesType, GraphNodeID finishNode) {
 	return findShortestRoutes(startNodesType, std::vector<GraphNodeID>({ finishNode }))[0];
 }
 
-template <typename LinkWeight_t, typename NodeType_t>
-std::vector<GraphRoutesToNode<LinkWeight_t>> RouteSearchableGraph<LinkWeight_t, NodeType_t>::findShortestRoutes(NodeType_t startNodesType, const std::vector<GraphNodeID>& finishNode) {
+template <typename Node_t, typename Link_t>
+std::vector<GraphRoutesToNode<typename RouteSearchableGraphWithCustomStructure<Node_t, Link_t>::LinkWeight_t>> 
+	RouteSearchableGraphWithCustomStructure<Node_t, Link_t>::findShortestRoutes(NodeType_t startNodesType, const std::vector<GraphNodeID>& finishNode) {
 	clearSearchingInfo();
 
 	auto startNodesTypeIt = this->m_typedNodes.find(startNodesType);
@@ -103,8 +113,9 @@ std::vector<GraphRoutesToNode<LinkWeight_t>> RouteSearchableGraph<LinkWeight_t, 
 	return output;
 }
 
-template <typename LinkWeight_t, typename NodeType_t>
-std::vector<GraphRoutesToNode<LinkWeight_t>> RouteSearchableGraph<LinkWeight_t, NodeType_t>::findShortestRoutes(NodeType_t startNodesType, NodeType_t finishNodesType) {
+template <typename Node_t, typename Link_t>
+std::vector<GraphRoutesToNode<typename RouteSearchableGraphWithCustomStructure<Node_t, Link_t>::LinkWeight_t>> 
+	RouteSearchableGraphWithCustomStructure<Node_t, Link_t>::findShortestRoutes(NodeType_t startNodesType, NodeType_t finishNodesType) {
 	clearSearchingInfo();
 
 	auto startNodesTypeIt = this->m_typedNodes.find(startNodesType);
@@ -119,13 +130,15 @@ std::vector<GraphRoutesToNode<LinkWeight_t>> RouteSearchableGraph<LinkWeight_t, 
 	return output;
 }
 
-template <typename LinkWeight_t, typename NodeType_t>
-GraphRoutesToNode<LinkWeight_t> RouteSearchableGraph<LinkWeight_t, NodeType_t>::findShortestRoutes(NodeType_t startNodesType, GraphNodeID finishNode, LinkWeight_t maxWeight) {
+template <typename Node_t, typename Link_t>
+GraphRoutesToNode<typename RouteSearchableGraphWithCustomStructure<Node_t, Link_t>::LinkWeight_t> 
+	RouteSearchableGraphWithCustomStructure<Node_t, Link_t>::findShortestRoutes(NodeType_t startNodesType, GraphNodeID finishNode, LinkWeight_t maxWeight) {
 	return findShortestRoutes(startNodesType, std::vector<GraphNodeID>({ finishNode }), maxWeight)[0];
 }
 
-template <typename LinkWeight_t, typename NodeType_t>
-std::vector<GraphRoutesToNode<LinkWeight_t>> RouteSearchableGraph<LinkWeight_t, NodeType_t>::findShortestRoutes(NodeType_t startNodesType, const std::vector<GraphNodeID>& finishNode, LinkWeight_t maxWeight) {
+template <typename Node_t, typename Link_t>
+std::vector<GraphRoutesToNode<typename RouteSearchableGraphWithCustomStructure<Node_t, Link_t>::LinkWeight_t>> 
+	RouteSearchableGraphWithCustomStructure<Node_t, Link_t>::findShortestRoutes(NodeType_t startNodesType, const std::vector<GraphNodeID>& finishNode, LinkWeight_t maxWeight) {
 	clearSearchingInfo();
 
 	auto startNodesTypeIt = this->m_typedNodes.find(startNodesType);
@@ -139,8 +152,9 @@ std::vector<GraphRoutesToNode<LinkWeight_t>> RouteSearchableGraph<LinkWeight_t, 
 	return output;
 }
 
-template <typename LinkWeight_t, typename NodeType_t>
-std::vector<GraphRoutesToNode<LinkWeight_t>> RouteSearchableGraph<LinkWeight_t, NodeType_t>::findShortestRoutes(NodeType_t startNodesType, NodeType_t finishNodesType, LinkWeight_t maxWeight) {
+template <typename Node_t, typename Link_t>
+std::vector<GraphRoutesToNode<typename RouteSearchableGraphWithCustomStructure<Node_t, Link_t>::LinkWeight_t>> 
+	RouteSearchableGraphWithCustomStructure<Node_t, Link_t>::findShortestRoutes(NodeType_t startNodesType, NodeType_t finishNodesType, LinkWeight_t maxWeight) {
 	clearSearchingInfo();
 
 	auto startNodesTypeIt = this->m_typedNodes.find(startNodesType);
@@ -155,8 +169,8 @@ std::vector<GraphRoutesToNode<LinkWeight_t>> RouteSearchableGraph<LinkWeight_t, 
 	return output;
 }
 
-template <typename LinkWeight_t, typename NodeType_t>
-void RouteSearchableGraph<LinkWeight_t, NodeType_t>::Dijkstra(NodeType_t startNodesType, LinkWeight_t maxWeight, bool findOverweightRoutes) {
+template <typename Node_t, typename Link_t>
+void RouteSearchableGraphWithCustomStructure<Node_t, Link_t>::Dijkstra(NodeType_t startNodesType, LinkWeight_t maxWeight, bool findOverweightRoutes) {
 	auto cmp = [](node_ptr a, node_ptr b) {
 		if (a->searchingInfo.shortestRoutes.isRoutesExist && b->searchingInfo.shortestRoutes.isRoutesExist)
 			return a->searchingInfo.shortestRoutes.routeWeight < b->searchingInfo.shortestRoutes.routeWeight;
@@ -174,7 +188,7 @@ void RouteSearchableGraph<LinkWeight_t, NodeType_t>::Dijkstra(NodeType_t startNo
 		start->searchingInfo.shortestRoutes.node = start->ID;
 		start->searchingInfo.shortestRoutes.isRoutesExist = true;
 		start->searchingInfo.shortestRoutes.routeWeight = LinkWeight_t();
-		start->searchingInfo.shortestRoutes.routesData = { GraphRoute() };
+		start->searchingInfo.shortestRoutes.routesData = { GraphRoute<LinkWeight_t>() };
 		start->searchingInfo.shortestRoutes.routesData.back().start = start->ID;
 		start->searchingInfo.shortestRoutes.routesData.back().finish = start->ID;
 		start->searchingInfo.shortestRoutes.routesData.back().routeWeight = LinkWeight_t();
@@ -232,5 +246,11 @@ void RouteSearchableGraph<LinkWeight_t, NodeType_t>::Dijkstra(NodeType_t startNo
 	for (auto& node_pair : this->m_Nodes)
 		node_pair.second->searchingInfo.isVisited = false;
 }
+} // namespace detail
+
+template <typename LinkWeight_t = float, typename NodeType_t = NodeType>
+class RouteSearchableGraph :
+	public detail::RouteSearchableGraphWithCustomStructure<detail::GraphNodeWithRoutesData<NodeType_t, LinkWeight_t>, detail::GraphWeightedLink<LinkWeight_t>>
+{};
 
 } // namespace graphs

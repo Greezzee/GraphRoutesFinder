@@ -4,9 +4,9 @@ using boost::polygon::voronoi_builder;
 using boost::polygon::voronoi_diagram;
 
 struct Point {
-	double a;
-	double b;
-	Point(double x, double y) : a(x), b(y) {}
+	int a;
+	int b;
+	Point(int x, int y) : a(x), b(y) {}
 };
 
 namespace boost {
@@ -19,7 +19,7 @@ namespace boost {
 
 		template <>
 		struct point_traits<Point> {
-			typedef double coordinate_type;
+			typedef int coordinate_type;
 
 			static inline coordinate_type get(
 				const Point& point, orientation_2d orient) {
@@ -32,9 +32,9 @@ namespace boost {
 int main() {
 
 	std::vector<Point> points;
-	points.push_back(Point(0.5, 0));
-	points.push_back(Point(1.5, 6));
-	points.push_back(Point(2.5, 6));
+	points.push_back(Point(0, 0));
+	points.push_back(Point(1, 6));
+	points.push_back(Point(2, 6));
 
 	voronoi_diagram<double> vd;
 	construct_voronoi(points.begin(), points.end(), &vd);

@@ -22,6 +22,7 @@ namespace detail {
 		return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 	}
 }
+
 class GraphTestGenerator final
 {
 public:
@@ -33,8 +34,7 @@ public:
 		m_nodesCount(0),
 		m_linksCount(0),
 		m_exitsCount(0),
-		m_generatingGraph(),
-		m_graphToCalcRoutes() {}
+		m_generatingGraph() {}
 	
 
 	void setNodesCount(unsigned nodes) { m_nodesCount = nodes; }
@@ -64,7 +64,6 @@ private:
 	graphs::GraphNodeID generateNode(int x, int y, float generation_prob);
 
 	graphs::PedestrianSimulatorGraphFD m_generatingGraph;
-	graphs::RouteSearchableGraph<> m_graphToCalcRoutes;
 
 	std::default_random_engine rng = std::default_random_engine{};
 
@@ -83,7 +82,6 @@ graphs::PedestrianSimulatorGraphFD GraphTestGenerator::generate() {
 	m_exits.clear();
 
 	m_generatingGraph = graphs::PedestrianSimulatorGraphFD();
-	m_graphToCalcRoutes = graphs::RouteSearchableGraph();
 	generateNode(0, 0, .8f);
 
 	if (!m_generatingGraph.isNodeOfTypeExists(graphs::NodeType::SOURCE))
@@ -100,7 +98,6 @@ graphs::PedestrianSimulatorGraphFD GraphTestGenerator::generate() {
 
 				float linkWigth = m_linksWidth.generate();
 				m_links[{m_field[y][x].first, m_field[y + 1][x].first}] = { m_generatingGraph.createLink(m_field[y][x].first, m_field[y + 1][x].first, linkWigth), linkWigth };
-				m_graphToCalcRoutes.createLink(m_field[y][x].first, m_field[y + 1][x].first, 1.f);
 				m_curLinks++;
 			}
 		}
@@ -116,18 +113,12 @@ graphs::PedestrianSimulatorGraphFD GraphTestGenerator::generate() {
 
 				float linkWigth = m_linksWidth.generate();
 				m_links[{m_field[y][x].first, m_field[y][x + 1].first}] = { m_generatingGraph.createLink(m_field[y][x].first, m_field[y][x + 1].first, linkWigth), linkWigth };
-				m_graphToCalcRoutes.createLink(m_field[y][x].first, m_field[y][x + 1].first, 1.f);
 				m_curLinks++;
 			}
 		}
 
-	auto routes = m_graphToCalcRoutes.findShortestRoutes(graphs::NodeType::SOURCE, graphs::NodeType::STANDART);
-
-	for (auto route : routes) {
-		m_generatingGraph.setPrioritizedDirection(route.node, route.routesData[0].linksRoute.back());
-	}
-
 	m_generatingGraph.setExitType(graphs::NodeType::SOURCE);
+	m_generatingGraph.setClosestExitAsPrioritizedDirection(graphs::NodeType::STANDART);
 
 	return m_generatingGraph;
 }
@@ -155,7 +146,6 @@ graphs::GraphNodeID GraphTestGenerator::generateNode(int x, int y, float generat
 		m_exits[{x, y}] = { m_field[y][x].first, capacity };
 	}
 
-	m_graphToCalcRoutes.createNode(typeToCreate);
 	m_curNodes++;
 
 	if (m_curNodes == m_nodesCount)
@@ -177,7 +167,6 @@ graphs::GraphNodeID GraphTestGenerator::generateNode(int x, int y, float generat
 		graphs::GraphNodeID nextNode = generateNode(nearbyNodes[i].first, nearbyNodes[i].second, generation_prob);
 		float linkWigth = m_linksWidth.generate();
 		m_links[{m_field[y][x].first, nextNode}] = { m_generatingGraph.createLink(m_field[y][x].first, nextNode, linkWigth), linkWigth };
-		m_graphToCalcRoutes.createLink(m_field[y][x].first, nextNode, 1.f);
 		m_curLinks++;
 	}
 	return m_field[y][x].first;

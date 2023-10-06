@@ -3,6 +3,7 @@
 #include <chrono>
 #include "TypedGraph.h"
 #include "WeightedGraph.h"
+#include "RouteSearchableGraph.h"
 
 namespace graphs {
 
@@ -10,7 +11,7 @@ namespace detail {
 
 	struct PeopleToMoveInData;
 
-	struct GraphNodeFD : public GraphTypedNode<NodeType> {
+	struct GraphNodeFD : public GraphNodeWithRoutesData<NodeType, double> {
 		double spaceArea;
 
 		unsigned peopleCapacity, peopleInside = 0;
@@ -51,8 +52,7 @@ struct PeopleDestributionData {
 
 
 class PedestrianSimulatorGraphFD final :
-	public TypedGraph<NodeType, detail::GraphNodeFD, detail::GraphLinkFD<double>>,
-	public WeightedGraph<double, detail::GraphNodeFD, detail::GraphLinkFD<double>>
+	public detail::RouteSearchableGraphWithCustomStructure<detail::GraphNodeFD, detail::GraphLinkFD<double>>
 {
 public:
 	PedestrianSimulatorGraphFD();
@@ -60,13 +60,14 @@ public:
 	// node capacity will be calculated automatically
 	GraphNodeID createNode(NodeType type, double area);
 	GraphNodeID createNode(NodeType type, double area, unsigned zoneCapacity);
-	GraphLinkID createLink(GraphNodeID from, GraphNodeID to, double linkWidth);
+	GraphLinkID createLink(GraphNodeID from, GraphNodeID to, double linkWidth, double linkWeight = 1.);
 
 	void setNodeFoundamentalDiagram(GraphNodeID node, std::function<double(double)> fd);
 	void setNodeTypeFoundamentalDiagram(NodeType type, std::function<double(double)> fd);
 	void setExitType(NodeType exitType);
 	void setNodeExitCapacity(GraphNodeID node, double exitCapacity);
 	void setPrioritizedDirection(GraphNodeID node, GraphLinkID prioritizedLink);
+	void setClosestExitAsPrioritizedDirection(NodeType type);
 
 	void setPeopleAmountInNode(GraphNodeID, unsigned peopleAmount);
 	void fillWithPeopleEvenly(NodeType typeToFill, double fillRate);

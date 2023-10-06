@@ -10,14 +10,17 @@ namespace detail {
 	{
 		NodeType_t type = NodeType_t{};
 		virtual ~GraphTypedNode() = default;
+
+		using node_type_t = NodeType_t;
 	};
 }
 
-template <typename NodeType_t,
-		  typename Node_t,
+template <typename Node_t,
 		  typename Link_t>
 class TypedGraph : virtual public Graph<typename Node_t, typename Link_t>
 {
+	using NodeType_t = typename Node_t::node_type_t;
+
 public:
 	virtual ~TypedGraph() = default;
 
@@ -38,16 +41,16 @@ protected:
 	std::map<NodeType_t, std::set<node_ptr>> m_typedNodes;
 };
 
-template <typename NodeType_t, typename Node_t, typename Link_t>
-GraphNodeID TypedGraph<NodeType_t, Node_t, Link_t>::createNode(NodeType_t type) {
+template <typename Node_t, typename Link_t>
+GraphNodeID TypedGraph<Node_t, Link_t>::createNode(NodeType_t type) {
 	auto newNode = this->createNewNode();
 	newNode.second->type = type;
 	m_typedNodes[type].insert(newNode.second);
 	return newNode.first;
 }
 
-template <typename NodeType_t, typename Node_t, typename Link_t>
-void TypedGraph<NodeType_t, Node_t, Link_t>::removeNode(GraphNodeID node) {
+template <typename Node_t, typename Link_t>
+void TypedGraph<Node_t, Link_t>::removeNode(GraphNodeID node) {
 	auto nodeIt = this->m_Nodes.find(node);
 	if (nodeIt == this->m_Nodes.end())
 		return;
@@ -60,8 +63,8 @@ void TypedGraph<NodeType_t, Node_t, Link_t>::removeNode(GraphNodeID node) {
 	Graph< Node_t, Link_t>::removeNode(node);
 }
 
-template <typename NodeType_t, typename Node_t, typename Link_t>
-std::vector<GraphNodeID> TypedGraph<NodeType_t, Node_t, Link_t>::getUnreachableNodes(NodeType_t startType) {
+template <typename Node_t, typename Link_t>
+std::vector<GraphNodeID> TypedGraph<Node_t, Link_t>::getUnreachableNodes(NodeType_t startType) {
 	this->setNodesUnvisited();
 
 	auto startNodesTypeIt = m_typedNodes.find(startType);
@@ -78,8 +81,8 @@ std::vector<GraphNodeID> TypedGraph<NodeType_t, Node_t, Link_t>::getUnreachableN
 	return output;
 }
 
-template <typename NodeType_t, typename Node_t, typename Link_t>
-bool TypedGraph<NodeType_t, Node_t, Link_t>::isNodeOfTypeExists(NodeType_t type) {
+template <typename Node_t, typename Link_t>
+bool TypedGraph<Node_t, Link_t>::isNodeOfTypeExists(NodeType_t type) {
 	auto nodesTypeIt = m_typedNodes.find(type);
 	if (nodesTypeIt == m_typedNodes.end())
 		return false;

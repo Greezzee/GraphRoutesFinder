@@ -51,7 +51,7 @@ namespace detail {
 	};
 }
 
-template <typename Node_t, typename Link_t>
+template <typename Node_t, typename Link_t> 
 class Graph
 {
 public:
