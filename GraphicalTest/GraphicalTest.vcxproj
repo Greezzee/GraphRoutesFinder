@@ -141,6 +141,9 @@
     <ClInclude Include="GraphTestGenerator.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\BuildingToGraphConverter\BuildingToGraphConverter.vcxproj">
+      <Project>{96b4203a-37a8-4554-93f6-ba073332fd5f}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\GraphRoutesFinder\GraphRoutesFinder.vcxproj">
       <Project>{6d2ee05e-b1e6-4287-a5cc-8b491d5f3b87}</Project>
       <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>

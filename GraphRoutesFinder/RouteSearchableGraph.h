@@ -249,8 +249,6 @@ void RouteSearchableGraphWithCustomStructure<Node_t, Link_t>::Dijkstra(NodeType_
 } // namespace detail
 
 template <typename LinkWeight_t = float, typename NodeType_t = NodeType>
-class RouteSearchableGraph :
-	public detail::RouteSearchableGraphWithCustomStructure<detail::GraphNodeWithRoutesData<NodeType_t, LinkWeight_t>, detail::GraphWeightedLink<LinkWeight_t>>
-{};
+using RouteSearchableGraph = detail::RouteSearchableGraphWithCustomStructure<detail::GraphNodeWithRoutesData<NodeType_t, LinkWeight_t>, detail::GraphWeightedLink<LinkWeight_t>>;
 
 } // namespace graphs

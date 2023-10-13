@@ -1,6 +1,9 @@
 #include <iostream>
 #include "GraphTestGenerator.h"
 #include <SFML/Graphics.hpp>
+
+#include "../BuildingToGraphConverter/VoronoiWrapper.h"
+
 /*
 int main()
 {
@@ -21,7 +24,7 @@ int main()
 	return 0;
 }
 */
-
+/*
 using graphs::NodeType;
 
 struct GraphZone {
@@ -304,4 +307,104 @@ int main() {
 
 		window.display();
 	}
+}
+*/
+
+#define NPOINT 200
+
+int main() {
+
+    std::vector<voronoi::Vector2D<double>> points(NPOINT);
+	std::vector<voronoi::Vector2D<double>> speed(NPOINT);
+
+    for (size_t i = 0; i < NPOINT; i++) {
+        points[i].x = ((float)rand() / (1.0f + (float)RAND_MAX));
+        points[i].y = ((float)rand() / (1.0f + (float)RAND_MAX));
+
+		speed[i].x = ((float)rand() / (1.0f + (float)RAND_MAX) - 0.5f) * 0.006;
+		speed[i].y = ((float)rand() / (1.0f + (float)RAND_MAX) - 0.5f) * 0.006;
+    }
+
+    printf("# Seed sites\n");
+    for (size_t i = 0; i < NPOINT; i++) {
+        printf("%f %f\n", (double)points[i].x, (double)points[i].y);
+    }
+
+    voronoi::VoronoiWrapper<voronoi::Vector2D<double>> wrapper;
+    wrapper.setPoints(points);
+    auto output = wrapper.constructVoronoi();
+
+	double x_full_len = 1000;
+	double y_full_len = 1000;
+
+	sf::RenderWindow window;
+	window.create(sf::VideoMode(x_full_len, y_full_len), "PedestrianSimulationDemo");
+	window.setKeyRepeatEnabled(false);
+
+	sf::CircleShape circle;
+	circle.setFillColor(sf::Color::White);
+	circle.setRadius(2.f);
+	circle.setOrigin(0.5f, 0.5f);
+
+	sf::RectangleShape rect;
+	rect.setFillColor(sf::Color::White);
+	rect.setOrigin(0, -0.5);
+
+	window.setFramerateLimit(60);
+
+	while (window.isOpen()) {
+		sf::Event event;
+		while (window.pollEvent(event))
+		{
+			if (event.type == sf::Event::Closed)
+				window.close();
+		}
+		window.clear();
+
+		for (auto site : output) {
+			sf::Color color = sf::Color(rand() % 255, rand() % 255, rand() % 255);
+			for (auto edge : site.edges) {
+				rect.setFillColor(color);
+				rect.setSize(sf::Vector2f(edge.edge.lenght() * x_full_len, 1));
+				rect.setRotation(edge.edge.getAngle() / PI * 180);
+				rect.setPosition(sf::Vector2f(edge.edge.offset.x * x_full_len, edge.edge.offset.y * y_full_len));
+				window.draw(rect);
+			}
+		}
+
+		for (auto site : output) {
+			circle.setPosition(site.center.x * x_full_len, site.center.y * y_full_len);
+			window.draw(circle);
+		}
+
+		for (size_t i = 0; i < points.size(); ++i) {
+
+			auto& point = points[i];
+
+			point += speed[i];
+
+			if (point.x > 0.999) {
+				point.x = 0.999;
+				speed[i].x *= -1;
+			}
+			if (point.x < 0.001) {
+				point.x = 0.001;
+				speed[i].x *= -1;
+			}
+			if (point.y > 0.999) {
+				point.y = 0.999;
+				speed[i].y *= -1;
+			}
+			if (point.y < 0.001) {
+				point.y = 0.001;
+				speed[i].y *= -1;
+			}
+		}
+		voronoi::VoronoiWrapper<voronoi::Vector2D<double>> new_wrapper;
+		new_wrapper.setPoints(points);
+		output = new_wrapper.constructVoronoi();
+
+		window.display();
+	}
+    return 0;
 }
