@@ -310,29 +310,13 @@ int main() {
 }
 */
 
-#define NPOINT 200
+#include "../BuildingToGraphConverter/Wall.h"
+
+constexpr double WALL_STEP = 100;
+constexpr double GRID_STEP = 100;
 
 int main() {
 
-    std::vector<voronoi::Vector2D<double>> points(NPOINT);
-	std::vector<voronoi::Vector2D<double>> speed(NPOINT);
-
-    for (size_t i = 0; i < NPOINT; i++) {
-        points[i].x = ((float)rand() / (1.0f + (float)RAND_MAX));
-        points[i].y = ((float)rand() / (1.0f + (float)RAND_MAX));
-
-		speed[i].x = ((float)rand() / (1.0f + (float)RAND_MAX) - 0.5f) * 0.006;
-		speed[i].y = ((float)rand() / (1.0f + (float)RAND_MAX) - 0.5f) * 0.006;
-    }
-
-    printf("# Seed sites\n");
-    for (size_t i = 0; i < NPOINT; i++) {
-        printf("%f %f\n", (double)points[i].x, (double)points[i].y);
-    }
-
-    voronoi::VoronoiWrapper<voronoi::Vector2D<double>> wrapper;
-    wrapper.setPoints(points);
-    auto output = wrapper.constructVoronoi();
 
 	double x_full_len = 1000;
 	double y_full_len = 1000;
@@ -343,8 +327,8 @@ int main() {
 
 	sf::CircleShape circle;
 	circle.setFillColor(sf::Color::White);
-	circle.setRadius(2.f);
-	circle.setOrigin(0.5f, 0.5f);
+	circle.setRadius(4.f);
+	circle.setOrigin(2.f, 2.f);
 
 	sf::RectangleShape rect;
 	rect.setFillColor(sf::Color::White);
@@ -352,57 +336,177 @@ int main() {
 
 	window.setFramerateLimit(60);
 
+	std::vector<voronoi::Wall<double>> walls;
+	std::vector<voronoi::Vector2D<double>> voronoiPoints;
+	std::vector<voronoi::Vector2D<double>> gridPoints;
+
+	voronoi::VoronoiWrapper<voronoi::Vector2D<double>> null_wrapper;
+	auto output = null_wrapper.constructVoronoi();
+
+	bool isActiveLastWall = false;
+
+	sf::Clock clock;
+	clock.restart();
+
 	while (window.isOpen()) {
 		sf::Event event;
 		while (window.pollEvent(event))
 		{
 			if (event.type == sf::Event::Closed)
 				window.close();
+
+			switch (event.type)
+			{
+			case sf::Event::KeyPressed:
+				if (event.key.code == sf::Keyboard::C && isActiveLastWall) {
+					walls.back().setIsClosed(true);
+				}
+
+				if (event.key.code == sf::Keyboard::R) {
+					walls.clear();
+					isActiveLastWall = false;
+					voronoiPoints.clear();
+					output.clear();
+					gridPoints.clear();
+				}
+
+				if (event.key.code == sf::Keyboard::Escape) {
+					isActiveLastWall = false;
+					voronoiPoints.clear();
+					output.clear();
+					gridPoints.clear();
+				}
+
+				if (event.key.code == sf::Keyboard::X) {
+					voronoiPoints.clear();
+					gridPoints.clear();
+					for (auto& wall : walls) {
+						wall.addInnerEquidistantPoints(WALL_STEP);
+						auto newPoints = wall.generateAdditionalPointsForVoronoi(WALL_STEP / 2.);
+						voronoiPoints.insert(voronoiPoints.end(), newPoints.begin(), newPoints.end());
+					}
+
+					double x = WALL_STEP, y = WALL_STEP;
+
+					while (x < x_full_len) {
+
+						while (y < y_full_len) {
+
+							double minDistance = WALL_STEP * 2;
+
+							for (auto point : voronoiPoints) {
+								double distance = (point - voronoi::Vector2D<double>{x, y}).lenght();
+								minDistance = std::min(minDistance, distance);
+							}
+							if (minDistance > WALL_STEP || voronoiPoints.empty())
+								gridPoints.push_back({ x, y });
+
+							y += WALL_STEP;
+						}
+
+						x += WALL_STEP;
+						y = WALL_STEP;
+					}
+
+				}
+
+				if (event.key.code == sf::Keyboard::Z) {
+					voronoi::VoronoiWrapper<voronoi::Vector2D<double>> wrapper;
+					wrapper.setBoundingBox(voronoi::Vector2D<double>{ 0., 0. }, voronoi::Vector2D<double>{ x_full_len, y_full_len });
+					auto newVector = voronoiPoints;
+					newVector.insert(newVector.end(), gridPoints.begin(), gridPoints.end());
+					wrapper.setPoints(newVector);
+					output = wrapper.constructVoronoi();
+				}
+
+				break;
+			case sf::Event::MouseButtonPressed:
+				if (event.mouseButton.button == sf::Mouse::Left && clock.getElapsedTime().asMilliseconds() > 100) {
+					clock.restart();
+					if (isActiveLastWall) {
+						voronoi::Vector2D<double> newPoint;
+						newPoint.x = static_cast<double>(event.mouseButton.x);
+						newPoint.y = static_cast<double>(event.mouseButton.y);
+						walls.back().addPoint(newPoint);
+					}
+					else {
+						isActiveLastWall = true;
+						walls.push_back(voronoi::Wall<double>());
+						voronoi::Vector2D<double> newPoint;
+						newPoint.x = static_cast<double>(event.mouseButton.x);
+						newPoint.y = static_cast<double>(event.mouseButton.y);
+						walls.back().addPoint(newPoint);
+					}
+				}
+				if (event.mouseButton.button == sf::Mouse::Right) {
+					isActiveLastWall = false;
+				}
+				break;
+			default:
+				break;
+			}
 		}
 		window.clear();
 
 		for (auto site : output) {
 			sf::Color color = sf::Color(rand() % 255, rand() % 255, rand() % 255);
 			for (auto edge : site.edges) {
-				rect.setFillColor(color);
-				rect.setSize(sf::Vector2f(edge.edge.lenght() * x_full_len, 1));
+				rect.setFillColor(sf::Color::Green);
+				rect.setSize(sf::Vector2f(edge.edge.lenght(), 1));
 				rect.setRotation(edge.edge.getAngle() / PI * 180);
-				rect.setPosition(sf::Vector2f(edge.edge.offset.x * x_full_len, edge.edge.offset.y * y_full_len));
+				rect.setPosition(sf::Vector2f(edge.edge.offset.x, edge.edge.offset.y));
 				window.draw(rect);
 			}
 		}
 
-		for (auto site : output) {
-			circle.setPosition(site.center.x * x_full_len, site.center.y * y_full_len);
+		for (auto wall : walls) {
+			auto pointList = wall.getPoints();
+
+			for (auto point : pointList) {
+				circle.setFillColor(sf::Color::White);
+				circle.setPosition(point.x, point.y);
+				window.draw(circle);
+			}
+
+			for (auto point = pointList.begin(), point_e = std::prev(pointList.end()); point != point_e; ++point) {
+
+				voronoi::Segment2D<voronoi::Vector2D<double>> edge;
+				edge.x = (*std::next(point) - *point).x;
+				edge.y = (*std::next(point) - *point).y;
+				edge.offset = *point;
+
+				rect.setFillColor(sf::Color::White);
+				rect.setSize(sf::Vector2f(edge.lenght(), 2));
+				rect.setRotation(edge.getAngle() / PI * 180);
+				rect.setPosition(sf::Vector2f(edge.offset.x, edge.offset.y));
+				window.draw(rect);
+			}
+
+			if (wall.isClosed()) {
+				voronoi::Segment2D<voronoi::Vector2D<double>> edge;
+				edge.x = (pointList.front() - pointList.back()).x;
+				edge.y = (pointList.front() - pointList.back()).y;
+				edge.offset = pointList.back();
+
+				rect.setFillColor(sf::Color::White);
+				rect.setSize(sf::Vector2f(edge.lenght(), 2));
+				rect.setRotation(edge.getAngle() / PI * 180);
+				rect.setPosition(sf::Vector2f(edge.offset.x, edge.offset.y));
+				window.draw(rect);
+			}
+		}
+
+		for (auto point : voronoiPoints) {
+			circle.setFillColor(sf::Color::Green);
+			circle.setPosition(point.x, point.y);
 			window.draw(circle);
 		}
 
-		for (size_t i = 0; i < points.size(); ++i) {
-
-			auto& point = points[i];
-
-			point += speed[i];
-
-			if (point.x > 0.999) {
-				point.x = 0.999;
-				speed[i].x *= -1;
-			}
-			if (point.x < 0.001) {
-				point.x = 0.001;
-				speed[i].x *= -1;
-			}
-			if (point.y > 0.999) {
-				point.y = 0.999;
-				speed[i].y *= -1;
-			}
-			if (point.y < 0.001) {
-				point.y = 0.001;
-				speed[i].y *= -1;
-			}
+		for (auto point : gridPoints) {
+			circle.setFillColor(sf::Color::Blue);
+			circle.setPosition(point.x, point.y);
+			window.draw(circle);
 		}
-		voronoi::VoronoiWrapper<voronoi::Vector2D<double>> new_wrapper;
-		new_wrapper.setPoints(points);
-		output = new_wrapper.constructVoronoi();
 
 		window.display();
 	}

@@ -24,8 +24,8 @@ class TypedGraph : virtual public Graph<typename Node_t, typename Link_t>
 public:
 	virtual ~TypedGraph() = default;
 
-	GraphLinkID createNode(NodeType_t type);
-	void removeNode(GraphNodeID node);
+	virtual GraphLinkID createNode(NodeType_t type);
+	void removeNode(GraphNodeID node) override;
 
 	// array of nodes that can't be reachable from any node of type
 	std::vector<GraphNodeID> getUnreachableNodes(NodeType_t startType);
@@ -60,7 +60,7 @@ void TypedGraph<Node_t, Link_t>::removeNode(GraphNodeID node) {
 	auto typedNodesIt = m_typedNodes.find(removingNode->type);
 	if (typedNodesIt != m_typedNodes.end())
 		typedNodesIt->second.erase(removingNode);
-	Graph< Node_t, Link_t>::removeNode(node);
+	Graph<Node_t, Link_t>::removeNode(node);
 }
 
 template <typename Node_t, typename Link_t>

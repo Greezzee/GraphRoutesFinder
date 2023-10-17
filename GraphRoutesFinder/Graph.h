@@ -51,21 +51,27 @@ namespace detail {
 	};
 }
 
+// Maps old NodeIDs and LinkIDs with new ones after inserting 
+struct GraphTranslationInfo {
+	std::vector<std::map<GraphNodeID, GraphNodeID>> nodesTranslationInfo;
+	std::vector<std::map<GraphLinkID, GraphLinkID>> linksTranslationInfo;
+};
+
 template <typename Node_t, typename Link_t> 
 class Graph
 {
 public:
-	Graph();
+
 	virtual ~Graph() = default;
 
 	// creates Node with type, returns its ID
-	GraphNodeID createNode();
+	virtual GraphNodeID createNode();
 	// creates link between 2 nodes with some weight. Can be directed or undirected
-	GraphLinkID createLink(GraphNodeID from, GraphNodeID to, bool isDirected = false);
+	virtual GraphLinkID createLink(GraphNodeID from, GraphNodeID to, bool isDirected = false);
 
 	// remove node from graph. Also removes all links to/from this node so hanging links are impossible
-	void removeNode(GraphNodeID node);
-	void removeLink(GraphLinkID link);
+	virtual void removeNode(GraphNodeID node);
+	virtual void removeLink(GraphLinkID link);
 	
 	bool isNodeExists(GraphNodeID node) const;
 	bool isLinkExists(GraphLinkID link) const;
@@ -87,8 +93,13 @@ public:
 	std::vector<GraphNodeID> getWeaklyConnectedComponentContainsNode(GraphNodeID node);
 	std::vector<std::vector<GraphNodeID>> getWeaklyConnectedComponents();
 
+	// TODO:
 	//std::vector<GraphNodeID> getStronglyConnectedComponentContainsNode(GraphNodeID node);
 	//std::vector<std::vector<GraphNodeID>> getStronglyConnectedComponent();
+
+	// Adds into graphs all nodes and links from other. 
+	virtual GraphTranslationInfo mergeWith(const Graph<Node_t, Link_t>& other);
+
 protected:
 	using node_ptr = std::shared_ptr<typename Node_t>;
 	using link_ptr = std::shared_ptr<typename Link_t>;
@@ -109,17 +120,9 @@ protected:
 private:
 	void removeLink(link_ptr link);
 
-	GraphNodeID m_nextFreeGraphNodeID;
-	GraphLinkID m_nextFreeGraphLinkID;
+	GraphNodeID m_nextFreeGraphNodeID = UnsetGraphNodeID + 1;
+	GraphLinkID m_nextFreeGraphLinkID = UnsetGraphLinkID + 1;
 };
-
-template <typename Node_t, typename Link_t>
-Graph<Node_t, Link_t>::Graph() {
-	m_nextFreeGraphLinkID = UnsetGraphLinkID;
-	m_nextFreeGraphNodeID = UnsetGraphNodeID;
-	m_nextFreeGraphLinkID++;
-	m_nextFreeGraphNodeID++;
-}
 
 template <typename Node_t, typename Link_t>
 GraphNodeID Graph<Node_t, Link_t>::createNode() {
@@ -422,6 +425,13 @@ std::vector<std::vector<GraphNodeID>> Graph<Node_t, Link_t>::getWeaklyConnectedC
 		weaklyConnectedComponents.push_back(std::move(weaklyConnectedComponent));
 	}
 	return weaklyConnectedComponents;
+}
+
+template <typename Node_t, typename Link_t>
+GraphTranslationInfo Graph<Node_t, Link_t>::mergeWith(const Graph<Node_t, Link_t>& other) {
+	GraphTranslationInfo outInfo;
+
+	return outInfo;
 }
 
 } // namespace graphs

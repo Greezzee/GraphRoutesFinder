@@ -18,7 +18,7 @@
     <ClCompile Include="Source.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="Walls.h">
+    <ClCompile Include="Wall.h">
       <Filter>Файлы заголовков</Filter>
     </ClCompile>
   </ItemGroup>

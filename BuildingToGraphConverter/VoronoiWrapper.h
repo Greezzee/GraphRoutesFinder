@@ -35,7 +35,8 @@ public:
     }
 
     void setBoundingBox(const edge_point_t& left_down, const edge_point_t& up_right) {
-        m_bounding_box = { { left_down.x, left_down.y }, { up_right.x, up_right.y } };
+        m_bounding_box = { { static_cast<jcv_real>(left_down.x), static_cast<jcv_real>(left_down.y) },
+                           { static_cast<jcv_real>(up_right.x), static_cast<jcv_real>(up_right.y) } };
     }
 
     void setPoints(const std::vector<central_point_t>& points) {
@@ -46,6 +47,10 @@ public:
     }
 
     std::vector<Site<edge_point_t>> constructVoronoi() {
+
+        if (m_points.size() == 0)
+            return {};
+
         memset(&m_diagram, 0, sizeof(jcv_diagram));
 
         jcv_diagram_generate(m_points.size(), (const jcv_point*)(&m_points[0]), &m_bounding_box, 0, &m_diagram);

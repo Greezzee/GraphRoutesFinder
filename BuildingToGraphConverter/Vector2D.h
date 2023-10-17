@@ -12,6 +12,16 @@ template <typename T>
 struct Vector2D 
 {
 	T x, y;
+	Vector2D() {};
+	Vector2D(double a, double b): x(a), y(b) {}
+
+	Vector2D(const Vector2D<T>& other) : x(other.x), y(other.y) {}
+
+	Vector2D<T>& operator=(const Vector2D<T>& other) {
+		x = other.x;
+		y = other.y;
+		return *this;
+	}
 
 	virtual ~Vector2D() {}
 

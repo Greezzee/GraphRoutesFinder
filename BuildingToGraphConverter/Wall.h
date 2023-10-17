@@ -17,7 +17,13 @@ public:
 
 	void addPoint(const point_t& newPoint) { m_points.push_back(newPoint); }
 
+	std::list<point_t> getPoints() {
+		return m_points;
+	}
+
 	void addInnerEquidistantPoints(CoordType distance) {
+		if (m_isClosed)
+			m_points.push_back(m_points.front());
 		auto curPointIt = m_points.begin();
 		
 		while (std::next(curPointIt) != m_points.end()) {
@@ -26,7 +32,7 @@ public:
 			int pointCount = std::ceil((nextPoint - curPoint).lenght() / distance);
 			CoordType newDistance = (nextPoint - curPoint).lenght() / pointCount;
 			auto direction = (nextPoint - curPoint).normalize();
-			while ( (nextPoint - curPoint).lenghtSqr() > newDistance * newDistance) {
+			while ( (nextPoint - curPoint).lenghtSqr() > newDistance * newDistance + 0.001) {
 				point_t newPoint = curPoint + direction * newDistance;
 
 				m_points.insert(std::next(curPointIt), newPoint);
@@ -35,10 +41,15 @@ public:
 			}
 			curPointIt = std::next(curPointIt);
 		}
+		if (m_isClosed)
+			m_points.pop_back();
 	}
 
 	std::vector<point_t> generateAdditionalPointsForVoronoi(CoordType circlesRadius) {
 		std::vector<point_t> outPoints;
+
+		if (m_isClosed)
+			m_points.push_back(m_points.front());
 
 		for (auto it = m_points.begin(), ite = m_points.end(); std::next(it) != ite; ++it) {
 			Circle2D<CoordType> a, b;
@@ -51,10 +62,19 @@ public:
 			outPoints.insert(outPoints.end(), interPoints.points.begin(), interPoints.points.end());
 		}
 
+		if (m_isClosed)
+			m_points.pop_back();
+
 		return outPoints;
 	}
 
 	const std::list<point_t>& getPoints() const { return m_points; }
+
+	void setIsClosed(bool isClosed) { m_isClosed = isClosed; }
+
+	void setIsInnerFill(bool innerFill) { m_isInnerFill = innerFill; }
+
+	bool isClosed() { return m_isClosed; }
 private:
 	std::list<point_t> m_points;
 	bool m_isClosed, m_isInnerFill;
