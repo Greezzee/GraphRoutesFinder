@@ -1,11 +1,11 @@
 #include <iostream>
 #include "RouteSearchableGraph.h"
 #include <iostream>
-/*
+
 using namespace graphs;
 
 int main() {
-	RouteSearchableGraph graph;
+	RouteSearchableGraph<> graph;
 	auto a1 = graph.createNode(NodeType::STANDART);
 	auto a2 = graph.createNode(NodeType::STANDART);
 	auto a3 = graph.createNode(NodeType::STANDART);
@@ -58,6 +58,8 @@ int main() {
 
 	auto dataComponents = graph.getWeaklyConnectedComponents();
 	auto dataComponent = graph.getWeaklyConnectedComponentContainsNode(a2);
+
+	auto data14 = graph.getUnreachableNodes(NodeType::SOURCE);
+
 	return 0;
 }
-*/

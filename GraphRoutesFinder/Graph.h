@@ -350,9 +350,9 @@ void Graph<Node_t, Link_t>::forwardDFS(node_ptr start) {
 		stackRoute.pop();
 
 		for (auto& outputLink : curNode->outputLinks) {
-			auto nextNode = outputLink->to;
+			auto nextNode = m_caster.castNode(outputLink->to);
 			if (!outputLink->isDirected && nextNode == curNode) // processing undirected links
-				nextNode = outputLink->from;
+				nextNode = m_caster.castNode(outputLink->from);
 
 			if (nextNode->isVisited)
 				continue;

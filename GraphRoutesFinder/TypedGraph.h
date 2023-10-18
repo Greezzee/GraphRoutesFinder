@@ -70,7 +70,7 @@ std::vector<GraphNodeID> TypedGraph<Node_t, Link_t>::getUnreachableNodes(NodeTyp
 	auto startNodesTypeIt = m_typedNodes.find(startType);
 	if (startNodesTypeIt != m_typedNodes.end()) {
 		for (auto& node : startNodesTypeIt->second)
-			forwardDFS(node);
+			this->forwardDFS(node);
 	}
 	std::vector<GraphNodeID> output;
 	for (auto& node : this->m_Nodes) if (node.second->isVisited) {

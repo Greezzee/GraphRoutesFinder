@@ -12,9 +12,9 @@ namespace detail {
 	struct PeopleToMoveInData;
 
 	struct GraphNodeFD : public GraphNodeWithRoutesData<NodeType, double> {
-		double spaceArea;
+		double spaceArea = 0;
 
-		unsigned peopleCapacity, peopleInside = 0;
+		unsigned peopleCapacity = 0, peopleInside = 0;
 		double peopleToMoveOut = 0;
 		std::vector<PeopleToMoveInData> peopleToMoveIn;
 
