@@ -310,10 +310,10 @@ int main() {
 }
 */
 
-#include "../BuildingToGraphConverter/Wall.h"
+#include "../BuildingToGraphConverter/WallsArray.h"
 
-constexpr double WALL_STEP = 100;
-constexpr double GRID_STEP = 100;
+constexpr double WALL_STEP = 10;
+constexpr double GRID_STEP = 400;
 
 int main() {
 
@@ -336,7 +336,7 @@ int main() {
 
 	window.setFramerateLimit(60);
 
-	std::vector<voronoi::Wall<double>> walls;
+	voronoi::WallsArray<double> walls;
 	std::vector<voronoi::Vector2D<double>> voronoiPoints;
 	std::vector<voronoi::Vector2D<double>> gridPoints;
 
@@ -360,6 +360,7 @@ int main() {
 			case sf::Event::KeyPressed:
 				if (event.key.code == sf::Keyboard::C && isActiveLastWall) {
 					walls.back().setIsClosed(true);
+					walls.back().setIsInnerFill(true);
 				}
 
 				if (event.key.code == sf::Keyboard::R) {
@@ -382,30 +383,31 @@ int main() {
 					gridPoints.clear();
 					for (auto& wall : walls) {
 						wall.addInnerEquidistantPoints(WALL_STEP);
-						auto newPoints = wall.generateAdditionalPointsForVoronoi(WALL_STEP / 2.);
+						//wall.reducePoints(WALL_STEP / 2.);
+						auto newPoints = wall.generateAdditionalPointsForVoronoi(.01);
 						voronoiPoints.insert(voronoiPoints.end(), newPoints.begin(), newPoints.end());
 					}
 
-					double x = WALL_STEP, y = WALL_STEP;
+					double x = GRID_STEP, y = GRID_STEP;
 
 					while (x < x_full_len) {
 
 						while (y < y_full_len) {
 
-							double minDistance = WALL_STEP * 2;
+							double minDistance = GRID_STEP * 2;
 
 							for (auto point : voronoiPoints) {
 								double distance = (point - voronoi::Vector2D<double>{x, y}).lenght();
 								minDistance = std::min(minDistance, distance);
 							}
-							if (minDistance > WALL_STEP || voronoiPoints.empty())
+							if (minDistance > GRID_STEP || voronoiPoints.empty())
 								gridPoints.push_back({ x, y });
 
-							y += WALL_STEP;
+							y += GRID_STEP;
 						}
 
-						x += WALL_STEP;
-						y = WALL_STEP;
+						x += GRID_STEP;
+						y = GRID_STEP;
 					}
 
 				}
@@ -417,6 +419,36 @@ int main() {
 					newVector.insert(newVector.end(), gridPoints.begin(), gridPoints.end());
 					wrapper.setPoints(newVector);
 					output = wrapper.constructVoronoi();
+					output.removeSitesInsideWalls(walls);
+					output.mergeSitesToArea(GRID_STEP * GRID_STEP * 2.5);
+				}
+
+				if (event.key.code == sf::Keyboard::V && !isActiveLastWall) {
+					walls.push_back(voronoi::Wall<double>());
+
+					voronoi::Vector2D<double> center = { 500., 500. };
+
+					for (double angle = 0; angle < 2 * PI; angle += 0.1) {
+						voronoi::Vector2D<double> offset = 200. * voronoi::Vector2D<double>(std::cos(angle), std::sin(angle));
+
+						walls.back().addPoint(center + offset);
+					}
+					walls.back().setIsClosed(true);
+					walls.back().setIsInnerFill(true);
+				}
+
+				if (event.key.code == sf::Keyboard::B && !isActiveLastWall) {
+
+					for (size_t i = 0; i < 3; ++i) {
+						walls.push_back(voronoi::Wall<double>());
+						walls.back().addPoint(voronoi::Vector2D<double>{ -100., 500. + 100. * i }.rotate(-PI / 4.));
+						walls.back().addPoint(voronoi::Vector2D<double>{ 400., 500. + 100. * i }.rotate(-PI / 4.));
+						walls.back().addPoint(voronoi::Vector2D<double>{ 400., 500. + 100. * i + 4. + 8. * i }.rotate(-PI / 4.));
+						walls.back().addPoint(voronoi::Vector2D<double>{ -100., 500. + 100. * i + 4. + 8. * i }.rotate(-PI / 4.));
+
+						walls.back().setIsClosed(true);
+						walls.back().setIsInnerFill(true);
+					}
 				}
 
 				break;
@@ -449,12 +481,11 @@ int main() {
 		window.clear();
 
 		for (auto site : output) {
-			sf::Color color = sf::Color(rand() % 255, rand() % 255, rand() % 255);
-			for (auto edge : site.edges) {
+			for (auto edge : site.second.edges) {
 				rect.setFillColor(sf::Color::Green);
-				rect.setSize(sf::Vector2f(edge.edge.lenght(), 1));
-				rect.setRotation(edge.edge.getAngle() / PI * 180);
-				rect.setPosition(sf::Vector2f(edge.edge.offset.x, edge.edge.offset.y));
+				rect.setSize(sf::Vector2f(edge.lenght(), 1));
+				rect.setRotation(edge.getAngle() / PI * 180);
+				rect.setPosition(sf::Vector2f(edge.offset.x, edge.offset.y));
 				window.draw(rect);
 			}
 		}
@@ -496,13 +527,13 @@ int main() {
 			}
 		}
 
-		for (auto point : voronoiPoints) {
+		for (auto point : voronoiPoints) if (!walls.isPointInsideWall(point)) {
 			circle.setFillColor(sf::Color::Green);
 			circle.setPosition(point.x, point.y);
 			window.draw(circle);
 		}
 
-		for (auto point : gridPoints) {
+		for (auto point : gridPoints) if (!walls.isPointInsideWall(point)) {
 			circle.setFillColor(sf::Color::Blue);
 			circle.setPosition(point.x, point.y);
 			window.draw(circle);

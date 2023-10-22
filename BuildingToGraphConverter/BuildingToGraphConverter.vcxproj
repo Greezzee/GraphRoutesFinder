@@ -138,10 +138,12 @@
   <ItemGroup>
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="Wall.h" />
+    <ClCompile Include="WallsArray.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Circle2D.h" />
     <ClInclude Include="Vector2D.h" />
+    <ClInclude Include="VoronoiDiagram.h" />
     <ClInclude Include="VoronoiWrapper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -68,6 +68,8 @@ public:
 	std::vector<GraphRoutesToNode<LinkWeight_t>> findShortestRoutes(NodeType_t startNodesType, const std::vector<GraphNodeID>& finishNode, LinkWeight_t maxWeight);
 	// array for every finish node of array of all shortest paths. Includes only routes with weight less than maxWeight
 	std::vector<GraphRoutesToNode<LinkWeight_t>> findShortestRoutes(NodeType_t startNodesType, NodeType_t finishNodesType, LinkWeight_t maxWeight);
+
+	void removeNode(GraphNodeID node) override { TypedGraph<Node_t, Link_t>::removeNode(node); }
 private:
 
 	using node_t = detail::GraphNodeWithRoutesData<NodeType_t, LinkWeight_t>;

@@ -11,6 +11,8 @@ template <typename T> int sgn(T val) {
 template <typename T>
 struct Vector2D 
 {
+	using CoordType = T;
+
 	T x, y;
 	Vector2D() {};
 	Vector2D(double a, double b): x(a), y(b) {}
@@ -87,6 +89,7 @@ struct Vector2D
 template <typename vector_t>
 struct Segment2D : vector_t
 {
+	using CoordType = typename vector_t::CoordType;
 	vector_t offset;
 };
 

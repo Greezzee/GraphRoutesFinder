@@ -24,7 +24,7 @@ namespace detail {
 		GraphNodeID ID = UnsetGraphNodeID;
 		std::set<std::shared_ptr<GraphLink>> inputLinks, outputLinks;
 
-		bool isVisited = false;
+		mutable bool isVisited = false;
 
 		virtual ~GraphNode() = default;
 	};
@@ -41,11 +41,11 @@ namespace detail {
 	template <typename Node_t, typename Link_t>
 	struct GraphNodeLinkCaster 
 	{
-		inline std::shared_ptr<Node_t> castNode(const std::shared_ptr<GraphNode>& ptr) {
+		inline std::shared_ptr<Node_t> castNode(const std::shared_ptr<GraphNode>& ptr) const {
 			return std::static_pointer_cast<Node_t>(ptr);
 		}
 
-		inline std::shared_ptr<Link_t> castLink(const std::shared_ptr<GraphLink>& ptr) {
+		inline std::shared_ptr<Link_t> castLink(const std::shared_ptr<GraphLink>& ptr) const {
 			return std::static_pointer_cast<Link_t>(ptr);
 		}
 	};
@@ -81,7 +81,7 @@ public:
 	std::vector<GraphNodeID> getExternalNodes() const;
 
 	// returns true if graph is weakly connected (if all links are undirected it's equal to connected)
-	bool isConnected();
+	bool isConnected() const;
 
 	// return pair of nodes connected with given link. If link is directed, connection from first to second. Else the sequence is arbitrary
 	std::pair<GraphNodeID, GraphNodeID> getConnectingNodes(GraphLinkID link) const;
@@ -113,7 +113,8 @@ protected:
 	std::pair<GraphNodeID, node_ptr> createNewNode();
 	std::pair<GraphLinkID, link_ptr> createNewLink(GraphNodeID from, GraphNodeID to, bool isDirected = false);
 
-	void setNodesUnvisited();
+	// const because called in isConnected. IsVisited is mutable
+	void setNodesUnvisited() const;
 
 	// starts in start, mark as visited all reachable nodes throw forward dfs
 	void forwardDFS(node_ptr start);
@@ -248,14 +249,14 @@ std::vector<GraphNodeID> Graph<Node_t, Link_t>::getExternalNodes() const {
 }
 
 template <typename Node_t, typename Link_t>
-void Graph<Node_t, Link_t>::setNodesUnvisited() {
+void Graph<Node_t, Link_t>::setNodesUnvisited() const {
 	for (auto& node : m_Nodes) {
 		node.second->isVisited = false;
 	}
 }
 
 template <typename Node_t, typename Link_t>
-bool Graph<Node_t, Link_t>::isConnected() {
+bool Graph<Node_t, Link_t>::isConnected() const {
 	setNodesUnvisited();
 
 	std::stack<node_ptr> stackRoute;
