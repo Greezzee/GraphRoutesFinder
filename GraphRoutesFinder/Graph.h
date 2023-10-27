@@ -8,8 +8,8 @@
 
 namespace graphs {
 
-using GraphNodeID = unsigned;
-using GraphLinkID = unsigned;
+using GraphNodeID = int;
+using GraphLinkID = int;
 
 const GraphNodeID UnsetGraphNodeID = GraphNodeID();
 const GraphLinkID UnsetGraphLinkID = GraphLinkID();
@@ -49,13 +49,42 @@ namespace detail {
 			return std::static_pointer_cast<Link_t>(ptr);
 		}
 	};
-}
 
-// Maps old NodeIDs and LinkIDs with new ones after inserting 
-struct GraphTranslationInfo {
-	std::vector<std::map<GraphNodeID, GraphNodeID>> nodesTranslationInfo;
-	std::vector<std::map<GraphLinkID, GraphLinkID>> linksTranslationInfo;
-};
+	class GraphIDConverter final {
+
+		class GraphNodeIDConverter final
+		{
+			GraphNodeID m_offset;
+		public:
+
+			GraphNodeIDConverter(GraphNodeID offset) : m_offset(offset) {}
+
+			GraphNodeID operator() (GraphNodeID id) {
+				return id + m_offset;
+			}
+		};
+
+		class GraphLinkIDConverter final
+		{
+			GraphLinkID m_offset;
+		public:
+
+			GraphLinkIDConverter(GraphLinkID offset) : m_offset(offset) {}
+
+			GraphLinkID operator() (GraphLinkID id) {
+				return id + m_offset;
+			}
+		};
+
+	public:
+
+		GraphIDConverter(GraphNodeID node_offset, GraphLinkID link_offset) : 
+			oldToNewNode(node_offset), newToOldNode(-node_offset), oldToNewLink(link_offset), newToOldLink(-link_offset) {}
+
+		GraphNodeIDConverter oldToNewNode, newToOldNode;
+		GraphLinkIDConverter oldToNewLink, newToOldLink;
+	};
+}
 
 template <typename Node_t, typename Link_t> 
 class Graph
@@ -98,7 +127,7 @@ public:
 	//std::vector<std::vector<GraphNodeID>> getStronglyConnectedComponent();
 
 	// Adds into graphs all nodes and links from other. 
-	virtual GraphTranslationInfo mergeWith(const Graph<Node_t, Link_t>& other);
+	detail::GraphIDConverter mergeWith(const Graph<Node_t, Link_t>& other);
 
 protected:
 	using node_ptr = std::shared_ptr<typename Node_t>;
@@ -429,8 +458,41 @@ std::vector<std::vector<GraphNodeID>> Graph<Node_t, Link_t>::getWeaklyConnectedC
 }
 
 template <typename Node_t, typename Link_t>
-GraphTranslationInfo Graph<Node_t, Link_t>::mergeWith(const Graph<Node_t, Link_t>& other) {
-	GraphTranslationInfo outInfo;
+detail::GraphIDConverter Graph<Node_t, Link_t>::mergeWith(const Graph<Node_t, Link_t>& other) {
+	detail::GraphIDConverter outInfo(m_nextFreeGraphNodeID - 1, m_nextFreeGraphLinkID - 1);
+
+	for (auto& node : other.m_Nodes) {
+		m_Nodes[outInfo.oldToNewNode(node.first)] = node_ptr(new Node_t(*node.second));
+		m_Nodes[outInfo.oldToNewNode(node.first)]->ID = outInfo.oldToNewNode(node.first);
+	}
+
+	for (auto& link : other.m_Links) {
+		m_Links[outInfo.oldToNewLink(link.first)] = link_ptr(new Link_t(*link.second));
+		m_Links[outInfo.oldToNewLink(link.first)]->ID = outInfo.oldToNewLink(link.first);
+	}
+
+	for (auto& node : other.m_Nodes) {
+		
+		auto& newNode = m_Nodes[outInfo.oldToNewNode(node.first)];
+		newNode->inputLinks.clear();
+		newNode->outputLinks.clear();
+
+		for (auto& link : node.second->inputLinks)
+			newNode->inputLinks.insert(m_Links[outInfo.oldToNewLink(link->ID)]);
+
+		for (auto& link : node.second->outputLinks)
+			newNode->outputLinks.insert(m_Links[outInfo.oldToNewLink(link->ID)]);
+	}
+
+	for (auto& link : other.m_Links) {
+
+		auto newLink = m_Links[outInfo.oldToNewLink(link.first)];
+		newLink->from = m_Nodes[outInfo.oldToNewNode(newLink->from->ID)];
+		newLink->to = m_Nodes[outInfo.oldToNewNode(newLink->to->ID)];
+	}
+
+	m_nextFreeGraphNodeID += other.m_nextFreeGraphNodeID - 1;
+	m_nextFreeGraphLinkID += other.m_nextFreeGraphLinkID - 1;
 
 	return outInfo;
 }

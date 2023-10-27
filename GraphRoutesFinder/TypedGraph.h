@@ -33,6 +33,9 @@ public:
 	// returns true if at least 1 node of type exists
 	bool isNodeOfTypeExists(NodeType_t type);
 
+	// Adds into graphs all nodes and links from other. 
+	detail::GraphIDConverter mergeWith(const TypedGraph<Node_t, Link_t>& other);
+
 protected:
 	using node_ptr = std::shared_ptr<Node_t>;
 	using link_ptr = std::shared_ptr<Link_t>;
@@ -43,7 +46,7 @@ protected:
 
 template <typename Node_t, typename Link_t>
 GraphNodeID TypedGraph<Node_t, Link_t>::createNode(NodeType_t type) {
-	auto newNode = this->createNewNode();
+	auto newNode = Graph<Node_t, Link_t>::createNewNode();
 	newNode.second->type = type;
 	m_typedNodes[type].insert(newNode.second);
 	return newNode.first;
@@ -73,7 +76,7 @@ std::vector<GraphNodeID> TypedGraph<Node_t, Link_t>::getUnreachableNodes(NodeTyp
 			this->forwardDFS(node);
 	}
 	std::vector<GraphNodeID> output;
-	for (auto& node : this->m_Nodes) if (node.second->isVisited) {
+	for (auto& node : this->m_Nodes) if (!node.second->isVisited) {
 		output.push_back(node.second->ID);
 	}
 
@@ -87,6 +90,17 @@ bool TypedGraph<Node_t, Link_t>::isNodeOfTypeExists(NodeType_t type) {
 	if (nodesTypeIt == m_typedNodes.end())
 		return false;
 	return !nodesTypeIt->second.empty();
+}
+
+template <typename Node_t, typename Link_t>
+detail::GraphIDConverter TypedGraph<Node_t, Link_t>::mergeWith(const TypedGraph<Node_t, Link_t>& other) {
+	auto converter = Graph<Node_t, Link_t>::mergeWith(other);
+
+	for (auto& node : other.m_Nodes) {
+		m_typedNodes[node.second->type].insert(this->m_Nodes[converter.oldToNewNode(node.first)]);
+	}
+
+	return converter;
 }
 
 } // namespace graphs
